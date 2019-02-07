@@ -67,9 +67,9 @@ class VQA(Dataset):
                 data_dict = pickle.load(file)
                 self.a_size = len(data_dict['answer_word_to_idx'])
         if cv_pretrained:
+            self.image_dir = os.path.join(data_dir, dataset, f'images_{self.mode}_{str(size[0])}.h5')
             if not is_file_exist(self.image_dir):
                 make_images(data_dir, dataset, size)
-            self.image_dir = os.path.join(data_dir, dataset, f'images_{self.mode}_{str(size[0])}.h5')
             idx_dict_file = os.path.join(data_dir, dataset, 'idx_dict.pkl')
             print(f"Start loading {idx_dict_file}")
             with open(idx_dict_file, 'rb') as file:
@@ -79,8 +79,6 @@ class VQA(Dataset):
                 self.image_dir = os.path.join(data_dir, dataset, 'images', f'{self.mode}')
             elif dataset == 'vqa2':
                 self.image_dir = os.path.join(data_dir, dataset, f'{self.mode}2014')
-
-
 
     def __len__(self):
         return h5py.File(self.question_file, 'r', swmr=True)['questions'].shape[0]
