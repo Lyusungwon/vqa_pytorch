@@ -27,31 +27,6 @@ def load_default_config(args):
             "film_fc_hidden": 1024,
             "film_fc_layer": 2,
         }
-    elif args.model == 'san':
-        arg_dict = {
-            "dataset": "vqa2",
-            "input_h": 448,
-            "input_w": 448,
-            "top_k": 1000,
-            "multi_label": False,
-            "batch_size": 100,
-            "epochs": 100,
-            "lr": 3e-4,
-            "lr_reduce": True,
-            "weight_decay": 0,
-            "gradient_clipping": 0,
-            "cv_filter": 512,
-            "cv_kernel": 3,
-            "cv_stride": 2,
-            "cv_layer": 5,
-            "te_type": 'lstm',
-            "te_embedding": 1024,
-            "te_hidden": 1024,
-            "te_dropout": 0,
-            "te_layer": 1,
-            "san_layer": 2,
-            "san_k": 512
-        }
     elif args.model == 'basern':
         arg_dict = {
             "dataset": "clevr",
@@ -140,6 +115,31 @@ def load_default_config(args):
             "sarn_fp_hidden": 256,
             "sarn_fp_layer": 3,
             "sarn_fp_dropout": 0.5,
+        }
+    elif args.model == 'san':
+        arg_dict = {
+            "dataset": "vqa2",
+            "input_h": 448,
+            "input_w": 448,
+            "top_k": 1000,
+            "multi_label": False,
+            "batch_size": 100,
+            "epochs": 100,
+            "lr": 3e-4,
+            "lr_reduce": True,
+            "weight_decay": 0,
+            "gradient_clipping": 0,
+            "cv_filter": 512,
+            "cv_kernel": 3,
+            "cv_stride": 2,
+            "cv_layer": 5,
+            "te_type": 'lstm',
+            "te_embedding": 1024,
+            "te_hidden": 1024,
+            "te_dropout": 0,
+            "te_layer": 1,
+            "san_layer": 2,
+            "san_k": 512
         }
     elif args.model == 'mrn':
         arg_dict = {

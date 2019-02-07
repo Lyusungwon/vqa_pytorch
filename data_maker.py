@@ -27,9 +27,9 @@ clevr_q_dict = {'count': 'count',
                 'query_color': 'query_attribute'}
 
 
-def make_questions(data_dir, dataset, top_k=None, multi_label=False, tokenizer=None):
+def make_questions(data_dir, dataset, top_k=None, multi_label=False, tokenizer='rm'):
     print(f"Start making {dataset} data pickle")
-    if top_k and (dataset == 'vqa2' or dataset == 'vqa1'):
+    if top_k and dataset == 'vqa2':
         answer_corpus = list()
         for mode in modes:
             annotation_file = os.path.join(data_dir, dataset, 'v2_mscoco_{}2014_annotations.json'.format(mode))
@@ -67,7 +67,7 @@ def make_questions(data_dir, dataset, top_k=None, multi_label=False, tokenizer=N
                 q_type = clevr_q_dict[question['program'][-1][query]]
                 qt_corpus.add(q_type)
                 qa_list[mode].append((image_dir, image_id, q_words, a_word, q_type))
-        elif dataset == 'vqa2' or dataset == 'vqa1':
+        elif dataset == 'vqa2':
             question_list = {}
             question_file = os.path.join(data_dir, dataset, f'v2_OpenEnded_mscoco_{mode}2014_questions.json')
             with open(question_file) as f:
@@ -88,8 +88,6 @@ def make_questions(data_dir, dataset, top_k=None, multi_label=False, tokenizer=N
                     for word in answer_words:
                         if top_k and word["answer"] in top_k_words:
                             answer_word.append(word["answer"])
-                    if top_k and len(answer_word) == 0:
-                        continue
                 image_id = q_obj['image_id']
                 image_dir = f'COCO_{mode}2014_{str(image_id).zfill(12)}.jpg'
                 question_words = preprocess_questions(question_list[q_obj['question_id']], tokenizer)
@@ -123,12 +121,12 @@ def make_questions(data_dir, dataset, top_k=None, multi_label=False, tokenizer=N
                  'question_type_to_idx': question_type_to_idx,
                  'idx_to_question_type': idx_to_question_type
                  }
-    with open(os.path.join(data_dir, dataset, f'data_dict_{top_k}_{multi_label}.pkl'), 'wb') as file:
+    with open(os.path.join(data_dir, dataset, f'data_dict_{top_k}_{multi_label}_{tokenizer}.pkl'), 'wb') as file:
         pickle.dump(data_dict, file, protocol=pickle.HIGHEST_PROTOCOL)
-    print(f'data_dict_{top_k}_{multi_label}.pkl saved')
+    print(f'data_dict_{top_k}_{multi_label}_{tokenizer}.pkl saved')
     print(f"Start making {dataset} question data")
     for mode in modes:
-        with h5py.File(os.path.join(data_dir, dataset, f'questions_{mode}_{top_k}_{multi_label}.h5'), 'w') as f:
+        with h5py.File(os.path.join(data_dir, dataset, f'questions_{mode}_{top_k}_{multi_label}_{tokenizer}.h5'), 'w') as f:
             q_dset = None
             for n, (image_dir, image_id, q_word_list, answer_word, q_type) in enumerate(qa_list[mode]):
                 if q_dset is None:
@@ -142,7 +140,7 @@ def make_questions(data_dir, dataset, top_k=None, multi_label=False, tokenizer=N
                 a_dset[n] = [answer_word_to_idx[word] for word in answer_word]
                 ii_dset[n] = image_id
                 qt_dset[n] = question_type_to_idx[q_type]
-        print(f"questions_{mode}_{top_k}_{multi_label}.h5' saved")
+        print(f"questions_{mode}_{top_k}_{multi_label}_{tokenizer}.h5' saved")
 
 
 def make_images(data_dir, dataset, size, batch_size=128, max_images=None):
@@ -276,16 +274,18 @@ def preprocess_questions(sentence, nlp=None):
         question_words = word_tokenize(str(sentence).lower())
     elif nlp == 'mcb':
         question_words = tokenize_mcb(sentence)
+    elif nlp == 'act':
+        question_words = tokenize_active(sentence)
     elif nlp == 'rm':
         question_words = tokenize_rm(sentence)
     else:
-        question_words = tokenize_active(sentence)
+        raise NameError(nlp)
     return question_words
 
 
 if __name__ =='__main__':
     data_directory = os.path.join(home, 'data')
-    make_questions(data_directory, 'vqa2', 1000, True)
+    make_questions(data_dir=data_directory, dataset='vqa2', top_k=1000, multi_label=False, tokenizer='rm')
     # make_images(data_directory, 'sample', (448, 448), 5, 100)
     # make_questions(data_directory, 'sample')
     # make_images(data_directory, 'sample', (224, 224), 5, 100)

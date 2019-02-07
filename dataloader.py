@@ -50,23 +50,18 @@ def load_dataloader(data_directory, dataset, is_train=True, batch_size=128, data
 
 class VQA(Dataset):
     """VQA dataset."""
-    def __init__(self, data_dir, dataset, train=True, cv_pretrained=True, transform=None, size=(224,224), top_k=0, multi_label=False, tokenizer=None, text_max=14):
+    def __init__(self, data_dir, dataset, train=True, cv_pretrained=True, transform=None, size=(224,224), top_k=0, multi_label=False, tokenizer='rm', text_max=14):
         self.dataset = dataset
         self.mode = 'train' if train else 'val'
         self.cv_pretrained = cv_pretrained
         self.transform = transform
         self.multi_label = multi_label
         self.text_max = text_max
-        self.data_file = os.path.join(data_dir, dataset, f'data_dict_{top_k}_{multi_label}.pkl')
-        self.question_file = os.path.join(data_dir, dataset, f'questions_{self.mode}_{top_k}_{multi_label}.h5')
-        if self.cv_pretrained:
-            self.image_dir = os.path.join(data_dir, dataset, f'images_{self.mode}_{str(size[0])}.h5')
-            self.idx_dict_file = os.path.join(data_dir, dataset, 'idx_dict.pkl')
-        else:
-            if dataset == 'clevr' or dataset == 'sample':
-                self.image_dir = os.path.join(data_dir, dataset, 'images', f'{self.mode}')
-            elif dataset == 'vqa2':
-                self.image_dir = os.path.join(data_dir, dataset, f'{self.mode}2014')
+        self.question_file = os.path.join(data_dir, dataset, f'questions_{self.mode}_{top_k}_{multi_label}_{tokenizer}.h5')
+        if dataset == 'clevr' or dataset == 'sample':
+            self.image_dir = os.path.join(data_dir, dataset, 'images', f'{self.mode}')
+        elif dataset == 'vqa2':
+            self.image_dir = os.path.join(data_dir, dataset, f'{self.mode}2014')
         if not is_file_exist(self.question_file):
             make_questions(data_dir, dataset, top_k, multi_label, tokenizer)
         if cv_pretrained:
@@ -77,11 +72,14 @@ class VQA(Dataset):
 
     def load_data(self):
         if self.multi_label:
+            self.data_file = os.path.join(data_dir, dataset, f'data_dict_{top_k}_{multi_label}_{tokenizer}.pkl')
             print(f"Start loading {self.data_file}")
             with open(self.data_file, 'rb') as file:
                 data_dict = pickle.load(file)
                 self.a_size = len(data_dict['answer_word_to_idx'])
         if self.cv_pretrained:
+            self.image_dir = os.path.join(data_dir, dataset, f'images_{self.mode}_{str(size[0])}.h5')
+            self.idx_dict_file = os.path.join(data_dir, dataset, 'idx_dict.pkl')
             print(f"Start loading {self.idx_dict_file}")
             with open(self.idx_dict_file, 'rb') as file:
                 self.idx_dict = pickle.load(file)[self.mode]
@@ -99,7 +97,7 @@ class VQA(Dataset):
             image = h5py.File(self.image_dir, 'r', swmr=True)['images'][self.idx_dict[ii]]
             image = torch.from_numpy(image).unsqueeze(0)
         else:
-            image_file = f'COCO_{self.mode}2014_{str(ii).zfill(12)}.jpg' if 'vqa' in self.dataset else f'CLEVR_{self.mode}_{str(ii).zfill(6)}.png'
+            image_file = f'COCO_{self.mode}2014_{str(ii).zfill(12)}.jpg' if self.datase t== 'vqa2' else f'CLEVR_{self.mode}_{str(ii).zfill(6)}.png'
             if self.dataset == 'sample':
                 image_file = f'CLEVR_new_{str(ii).zfill(6)}.png'
             image = Image.open(os.path.join(self.image_dir, image_file)).convert('RGB')

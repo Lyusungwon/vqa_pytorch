@@ -6,13 +6,13 @@ from configloader import load_default_config
 from pathlib import Path
 import dataloader
 from utils import load_dict
-from film import Film
-from san import San
-from rn import RelationalNetwork
-from mrn import Mrn
-from mlb import Mlb
-from basern import BaseRN
-from sarn import Sarn
+from models.film import Film
+from models.basern import BaseRN
+from models.rn import RelationalNetwork
+from models.sarn import Sarn
+from models.san import San
+from models.mrn import Mrn
+from models.mlb import Mlb
 
 home = str(Path.home())
 
@@ -29,7 +29,7 @@ def get_config():
     data_arg.add_argument('--input-w', type=int)
     data_arg.add_argument('--top-k', type=int)
     data_arg.add_argument('--multi-label', action='store_true')
-    data_arg.add_argument('--tokenizer', type=str, default=None)
+    data_arg.add_argument('--tokenizer', type=str, default='rm', choices=['nltk', 'mcb', 'act', 'rm'])
     data_arg.add_argument('--text-max', type=int)
 
     train_arg = parser.add_argument_group('Train')
@@ -71,9 +71,6 @@ def get_config():
     model_arg.add_argument('--film-cf-filter', type=int)
     model_arg.add_argument('--film-fc-hidden', type=int)
     model_arg.add_argument('--film-fc-layer', type=int)
-    # san
-    model_arg.add_argument('--san-layer', type=int)
-    model_arg.add_argument('--san-k', type=int)
     # basern
     model_arg.add_argument('--basern-gt-hidden', type=int)
     model_arg.add_argument('--basern-gt-layer', type=int)
@@ -86,7 +83,7 @@ def get_config():
     model_arg.add_argument('--rn-fp-hidden', type=int)
     model_arg.add_argument('--rn-fp-layer', type=int)
     model_arg.add_argument('--rn-fp-dropout', type=float)
-    # rn
+    # sarn
     model_arg.add_argument('--sarn-hp-hidden', type=int)
     model_arg.add_argument('--sarn-hp-layer', type=int)
     model_arg.add_argument('--sarn-gt-hidden', type=int)
@@ -94,6 +91,9 @@ def get_config():
     model_arg.add_argument('--sarn-fp-hidden', type=int)
     model_arg.add_argument('--sarn-fp-layer', type=int)
     model_arg.add_argument('--sarn-fp-dropout', type=float)
+    # san
+    model_arg.add_argument('--san-layer', type=int)
+    model_arg.add_argument('--san-k', type=int)
     # mrn
     model_arg.add_argument('--mrn-hidden', type=int)
     model_arg.add_argument('--mrn-layer', type=int)
