@@ -219,7 +219,7 @@ def build_model(model, stage=4):
     for i in range(stage):
         name = 'layer%d' % (i + 1)
         layers.append(getattr(cnn, name))
-    layers.append(nn.AvgPool2d(2, 2, 0))
+    layers.append(torch.nn.AvgPool2d(2, 2, 0))
     model = torch.nn.Sequential(*layers)
     model.cuda()
     model.eval()
