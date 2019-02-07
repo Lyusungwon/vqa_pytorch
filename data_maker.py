@@ -30,21 +30,7 @@ clevr_q_dict = {'count': 'count',
 def make_questions(data_dir, dataset, top_k=None, multi_label=False, tokenizer='rm'):
     print(f"Start making {dataset} data pickle")
     if top_k and dataset == 'vqa2':
-        answer_corpus = list()
-        for mode in modes:
-            annotation_file = os.path.join(data_dir, dataset, 'v2_mscoco_{}2014_annotations.json'.format(mode))
-            with open(annotation_file) as f:
-                annotations = json.load(f)["annotations"]
-            for q_obj in annotations:
-                if not multi_label:
-                    answer_word = q_obj["multiple_choice_answer"]
-                    answer_corpus.append(answer_word)
-                else:
-                    answers = q_obj["answers"]
-                    for answer in answers:
-                        answer_corpus.append(answer["answer"])
-
-        top_k_words = set([i for (i, j) in Counter(answer_corpus).most_common(top_k)])
+        top_k_words = get_top_answers(data_dir, dataset, multi_label)
     query = 'type' if dataset == 'sample' else 'function'
     q_corpus = set()
     a_corpus = set()
@@ -150,18 +136,15 @@ def make_images(data_dir, dataset, size, batch_size=128, max_images=None):
     stage = 3 if size[0] <=300 else 4
     model = build_model(model_name, stage)
     img_size = size
-    idx_dict = dict()
     for mode in modes:
         img_dir = f'{mode}2014' if dataset == 'vqa2' else f'images/{mode}'
         input_paths = []
         idx_set = set()
         input_image_dir = os.path.join(data_dir, dataset, img_dir)
-        idx_dict[f'{mode}'] = dict()
-        for n, fn in enumerate(sorted(os.listdir(input_image_dir))):
+        for fn in sorted(os.listdir(input_image_dir)):
             if not fn.endswith(image_type): continue
             idx = int(os.path.splitext(fn)[0].split('_')[-1])
-            idx_dict[f'{mode}'][idx] = n
-            input_paths.append((os.path.join(input_image_dir, fn), n))
+            input_paths.append((os.path.join(input_image_dir, fn), idx))
             idx_set.add(idx)
         input_paths.sort(key=lambda x: x[1])
         assert len(idx_set) == len(input_paths)
@@ -172,13 +155,16 @@ def make_images(data_dir, dataset, size, batch_size=128, max_images=None):
         print(input_paths[-1])
         with h5py.File(os.path.join(data_dir, dataset, f'images_{mode}_{str(size[0])}.h5'), 'w') as f:
             feat_dset = None
+            idx_dset = None
             i0 = 0
             cur_batch = []
+            idx_batch = []
             for i, (path, idx) in enumerate(input_paths):
                 img = imread(path, mode='RGB')
                 img = imresize(img, img_size, interp='bicubic')
                 img = img.transpose(2, 0, 1)[None]
                 cur_batch.append(img)
+                idx_batch.append(idx)
                 if len(cur_batch) == batch_size:
                     feats = run_batch(cur_batch, model, dataset)
                     if feat_dset is None:
@@ -186,21 +172,25 @@ def make_images(data_dir, dataset, size, batch_size=128, max_images=None):
                         _, C, H, W = feats.shape
                         feat_dset = f.create_dataset('images', (N, C, H, W),
                                                      dtype=np.float32)
+                        idx_dset = f.create_dataset('idx', shape=(N,), dtype='int32')
                         print(N, C, H, W)
                     i1 = i0 + len(cur_batch)
                     feat_dset[i0:i1] = feats
+                    idx_dset[i0:i1] = idx_batch
                     i0 = i1
                     print('Processed %d / %d images' % (i1, len(input_paths)))
                     cur_batch = []
+                    idx_batch = []
             if len(cur_batch) > 0:
                 feats = run_batch(cur_batch, model, dataset)
                 i1 = i0 + len(cur_batch)
                 feat_dset[i0:i1] = feats
+                idx_dset[i0:i1] = idx_batch
                 print('Processed %d / %d images' % (i1, len(input_paths)))
         print(f"images saved in {os.path.join(data_dir, dataset, f'image_{mode}_{str(size[0])}.h5')}")
-        with open(os.path.join(data_dir, dataset, 'idx_dict.pkl'), 'wb') as file:
-            pickle.dump(idx_dict, file, protocol=pickle.HIGHEST_PROTOCOL)
-        print('idx_dict.pkl saved')
+        # with open(os.path.join(data_dir, dataset, 'idx_dict.pkl'), 'wb') as file:
+        #     pickle.dump(idx_dict, file, protocol=pickle.HIGHEST_PROTOCOL)
+        # print('idx_dict.pkl saved')
 
 
 def build_model(model, stage=4):
@@ -227,13 +217,8 @@ def build_model(model, stage=4):
 
 
 def run_batch(cur_batch, model, dataset):
-    if dataset == 'clevr':
-        mean = np.array([0.485, 0.456, 0.406]).reshape(1, 3, 1, 1)
-        std = np.array([0.229, 0.224, 0.224]).reshape(1, 3, 1, 1)
-    else:
-        mean = np.array([0, 0, 0]).reshape(1, 3, 1, 1)
-        std = np.array([1.0, 1.0, 1.0]).reshape(1, 3, 1, 1)
-
+    mean = np.array([0.485, 0.456, 0.406]).reshape(1, 3, 1, 1)
+    std = np.array([0.229, 0.224, 0.224]).reshape(1, 3, 1, 1)
     image_batch = np.concatenate(cur_batch, 0).astype(np.float32)
     image_batch = (image_batch / 255.0 - mean) / std
     with torch.no_grad():
@@ -283,6 +268,23 @@ def preprocess_questions(sentence, nlp=None):
         raise NameError(nlp)
     return question_words
 
+
+def get_top_answers(data_dir, dataset, multi_label):
+    answer_corpus = list()
+    for mode in modes:
+        annotation_file = os.path.join(data_dir, dataset, 'v2_mscoco_{}2014_annotations.json'.format(mode))
+        with open(annotation_file) as f:
+            annotations = json.load(f)["annotations"]
+        for q_obj in annotations:
+            if not multi_label:
+                answer_word = q_obj["multiple_choice_answer"]
+                answer_corpus.append(answer_word)
+            else:
+                answers = q_obj["answers"]
+                for answer in answers:
+                    answer_corpus.append(answer["answer"])
+    top_k_words = set([i for (i, j) in Counter(answer_corpus).most_common(top_k)])
+    return top_k_words
 
 if __name__ =='__main__':
     data_directory = os.path.join(home, 'data')
