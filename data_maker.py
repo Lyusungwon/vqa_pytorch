@@ -30,7 +30,7 @@ clevr_q_dict = {'count': 'count',
 def make_questions(data_dir, dataset, top_k=None, multi_label=False, tokenizer='rm'):
     print(f"Start making {dataset} data pickle")
     if top_k and dataset == 'vqa2':
-        top_k_words = get_top_answers(data_dir, dataset, multi_label)
+        top_k_words = get_top_answers(data_dir, dataset, top_k, multi_label)
     query = 'type' if dataset == 'sample' else 'function'
     q_corpus = set()
     a_corpus = set()
@@ -265,7 +265,7 @@ def preprocess_questions(sentence, nlp=None):
     return question_words
 
 
-def get_top_answers(data_dir, dataset, multi_label):
+def get_top_answers(data_dir, dataset, top_k, multi_label):
     answer_corpus = list()
     for mode in modes:
         annotation_file = os.path.join(data_dir, dataset, 'v2_mscoco_{}2014_annotations.json'.format(mode))
