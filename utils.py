@@ -81,13 +81,15 @@ def load_pretrained_embedding(word2idx, embedding_dim):
 def load_pretrained_conv():
     import torchvision.models as models
     model = models.resnet101(pretrained=True)
-    feature_extractor = list(model.children())[:-1]
+    feature_extractor = list(model.children())[:-2]
     for part in feature_extractor:
         for param in part.parameters():
             param.requires_grad = False
     # if output_channel:
     #     feature_extractor.append(nn.Conv2d(1024, output_channel, 1, 1))
+    feature_extractor.append(nn.AvgPool2d(2, 2, 0))
     feature_extractor = nn.Sequential(*feature_extractor)
+    feature_extractor.eval()
     print("Loaded pretrained feature extraction model.")
     return feature_extractor
 
