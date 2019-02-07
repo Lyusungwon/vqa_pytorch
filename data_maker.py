@@ -136,15 +136,18 @@ def make_images(data_dir, dataset, size, batch_size=128, max_images=None):
     stage = 3 if size[0] <=300 else 4
     model = build_model(model_name, stage)
     img_size = size
+    idx_dict = dict()
     for mode in modes:
         img_dir = f'{mode}2014' if dataset == 'vqa2' else f'images/{mode}'
         input_paths = []
         idx_set = set()
         input_image_dir = os.path.join(data_dir, dataset, img_dir)
-        for fn in sorted(os.listdir(input_image_dir)):
+        idx_dict[f'{mode}'] = dict()
+        for n, fn in enumerate(sorted(os.listdir(input_image_dir))):
             if not fn.endswith(image_type): continue
             idx = int(os.path.splitext(fn)[0].split('_')[-1])
-            input_paths.append((os.path.join(input_image_dir, fn), idx))
+            idx_dict[f'{mode}'][idx] = n
+            input_paths.append((os.path.join(input_image_dir, fn), n))
             idx_set.add(idx)
         input_paths.sort(key=lambda x: x[1])
         assert len(idx_set) == len(input_paths)
@@ -155,16 +158,13 @@ def make_images(data_dir, dataset, size, batch_size=128, max_images=None):
         print(input_paths[-1])
         with h5py.File(os.path.join(data_dir, dataset, f'images_{mode}_{str(size[0])}.h5'), 'w') as f:
             feat_dset = None
-            idx_dset = None
             i0 = 0
             cur_batch = []
-            idx_batch = []
             for i, (path, idx) in enumerate(input_paths):
                 img = imread(path, mode='RGB')
                 img = imresize(img, img_size, interp='bicubic')
                 img = img.transpose(2, 0, 1)[None]
                 cur_batch.append(img)
-                idx_batch.append(idx)
                 if len(cur_batch) == batch_size:
                     feats = run_batch(cur_batch, model, dataset)
                     if feat_dset is None:
@@ -172,25 +172,21 @@ def make_images(data_dir, dataset, size, batch_size=128, max_images=None):
                         _, C, H, W = feats.shape
                         feat_dset = f.create_dataset('images', (N, C, H, W),
                                                      dtype=np.float32)
-                        idx_dset = f.create_dataset('idx', shape=(N,), dtype='int32')
                         print(N, C, H, W)
                     i1 = i0 + len(cur_batch)
                     feat_dset[i0:i1] = feats
-                    idx_dset[i0:i1] = idx_batch
                     i0 = i1
                     print('Processed %d / %d images' % (i1, len(input_paths)))
                     cur_batch = []
-                    idx_batch = []
             if len(cur_batch) > 0:
                 feats = run_batch(cur_batch, model, dataset)
                 i1 = i0 + len(cur_batch)
                 feat_dset[i0:i1] = feats
-                idx_dset[i0:i1] = idx_batch
                 print('Processed %d / %d images' % (i1, len(input_paths)))
         print(f"images saved in {os.path.join(data_dir, dataset, f'image_{mode}_{str(size[0])}.h5')}")
-        # with open(os.path.join(data_dir, dataset, 'idx_dict.pkl'), 'wb') as file:
-        #     pickle.dump(idx_dict, file, protocol=pickle.HIGHEST_PROTOCOL)
-        # print('idx_dict.pkl saved')
+        with open(os.path.join(data_dir, dataset, 'idx_dict.pkl'), 'wb') as file:
+            pickle.dump(idx_dict, file, protocol=pickle.HIGHEST_PROTOCOL)
+        print('idx_dict.pkl saved')
 
 
 def build_model(model, stage=4):

@@ -64,9 +64,6 @@ class VQA(Dataset):
             self.image_dir = os.path.join(data_dir, dataset, f'{self.mode}2014')
         if not is_file_exist(self.question_file):
             make_questions(data_dir, dataset, top_k, multi_label, tokenizer)
-        if cv_pretrained:
-            if not is_file_exist(self.image_dir):
-                make_images(data_dir, dataset, size)
         self.load_data()
 
 
@@ -78,9 +75,11 @@ class VQA(Dataset):
                 data_dict = pickle.load(file)
                 self.a_size = len(data_dict['answer_word_to_idx'])
         if self.cv_pretrained:
-            self.image_dir = os.path.join(data_dir, dataset, f'images_{self.mode}_{str(size[0])}.h5')
-            self.idx_dict_file = os.path.join(data_dir, dataset, 'idx_dict.pkl')
-            print(f"Start loading {self.idx_dict_file}")
+            self.image_file = os.path.join(data_dir, dataset, f'images_{self.mode}_{str(size[0])}.h5')
+            if not is_file_exist(self.image_file):
+                make_images(data_dir, dataset, size)
+            idx_dict_file = os.path.join(data_dir, dataset, 'idx_dict.pkl')
+            print(f"Start loading {idx_dict_file}")
             with open(self.idx_dict_file, 'rb') as file:
                 self.idx_dict = pickle.load(file)[self.mode]
 
@@ -94,7 +93,7 @@ class VQA(Dataset):
         q_t = question_file['question_types'][idx]
         ii = question_file['image_ids'][idx]
         if self.cv_pretrained:
-            image = h5py.File(self.image_dir, 'r', swmr=True)['images'][self.idx_dict[ii]]
+            image = h5py.File(self.image_file, 'r', swmr=True)['images'][self.idx_dict[ii]]
             image = torch.from_numpy(image).unsqueeze(0)
         else:
             image_file = f'COCO_{self.mode}2014_{str(ii).zfill(12)}.jpg' if self.dataset == 'vqa2' else f'CLEVR_{self.mode}_{str(ii).zfill(6)}.png'
