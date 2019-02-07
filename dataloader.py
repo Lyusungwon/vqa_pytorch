@@ -97,7 +97,7 @@ class VQA(Dataset):
             image = h5py.File(self.image_dir, 'r', swmr=True)['images'][self.idx_dict[ii]]
             image = torch.from_numpy(image).unsqueeze(0)
         else:
-            image_file = f'COCO_{self.mode}2014_{str(ii).zfill(12)}.jpg' if self.datase t== 'vqa2' else f'CLEVR_{self.mode}_{str(ii).zfill(6)}.png'
+            image_file = f'COCO_{self.mode}2014_{str(ii).zfill(12)}.jpg' if self.dataset == 'vqa2' else f'CLEVR_{self.mode}_{str(ii).zfill(6)}.png'
             if self.dataset == 'sample':
                 image_file = f'CLEVR_new_{str(ii).zfill(6)}.png'
             image = Image.open(os.path.join(self.image_dir, image_file)).convert('RGB')
