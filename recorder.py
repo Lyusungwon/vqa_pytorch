@@ -89,7 +89,7 @@ class Recorder:
             self.per_question["number"][i] += idx.sum().item()
 
     def log_batch(self, batch_idx, batch_size):
-        print('Train Batch: {} [{}/{} ({:.0f}%)] Loss: {:.4f} / Time: {:.4f} / Acc: {:.4f}'.format(
+        print('Train Batch: {} [{}/{}({:.0f}%)] Loss:{:.4f} / Time:{:.4f} / Acc:{:.4f}'.format(
             self.epoch_idx,
             batch_idx * batch_size, self.dataset_size,
             100. * batch_idx / self.batch_num,
