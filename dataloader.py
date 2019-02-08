@@ -35,14 +35,14 @@ def collate_text(list_inputs):
 
 
 def load_dataloader(data_directory, dataset, is_train, batch_size=128, data_config=[224, 224, 0, True, 0, False, 'rm', 0]):
-    input_h, input_w, cpu_num, cv_pretrained, top_k, multi_label, tokenizer, text_max = data_config
+    input_h, input_w, cpu_num, cv_pretrained, top_k, multi_label, q_tokenizer, a_tokenizer, text_max = data_config
     if cv_pretrained:
         transform = transforms.Compose([transforms.ToTensor()])
     else:
         transform = transforms.Compose([transforms.Resize((input_h, input_w)), transforms.ToTensor()])
     dataloader = DataLoader(
         VQA(data_directory, dataset, train=is_train, cv_pretrained=cv_pretrained, transform=transform,
-            size=(input_h, input_w), top_k=top_k, multi_label=multi_label, tokenizer=tokenizer, text_max=text_max),
+            size=(input_h, input_w), top_k=top_k, multi_label=multi_label, q_tokenizer=tokenizer, a_tokenizer=tokenizer, text_max=text_max),
         batch_size=batch_size, shuffle=True,
         num_workers=cpu_num, pin_memory=True,
         collate_fn=collate_text)
@@ -52,18 +52,18 @@ def load_dataloader(data_directory, dataset, is_train, batch_size=128, data_conf
 class VQA(Dataset):
     """VQA dataset."""
     def __init__(self, data_dir, dataset, train=True, cv_pretrained=True, transform=None, size=(224,224),
-                 top_k=0, multi_label=False, tokenizer='rm', text_max=14):
+                 top_k=0, multi_label=False, q_tokenizer='none', a_tokenizer='none', text_max=14):
         self.dataset = dataset
         self.mode = 'train' if train else 'val'
         self.cv_pretrained = cv_pretrained
         self.transform = transform
         self.multi_label = multi_label
         self.text_max = text_max
-        self.question_file = os.path.join(data_dir, dataset, f'questions_{self.mode}_{top_k}_{multi_label}_{tokenizer}.h5')
+        self.question_file = os.path.join(data_dir, dataset, f'questions_{self.mode}_{top_k}_{multi_label}_{q_tokenizer}_{a_tokenizer}.h5')
         if not is_file_exist(self.question_file):
-            make_questions(data_dir, dataset, top_k, multi_label, tokenizer)
+            make_questions(data_dir, dataset, top_k, multi_label, q_tokenizer, a_tokenizer)
         if self.multi_label:
-            self.data_file = os.path.join(data_dir, dataset, f'data_dict_{top_k}_{multi_label}_{tokenizer}.pkl')
+            self.data_file = os.path.join(data_dir, dataset, f'data_dict_{top_k}_{multi_label}_{q_tokenizer}_{a_tokenizer}.pkl')
             print(f"Start loading {self.data_file}")
             with open(self.data_file, 'rb') as file:
                 data_dict = pickle.load(file)

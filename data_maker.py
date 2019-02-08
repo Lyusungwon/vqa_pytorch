@@ -8,6 +8,7 @@ import torch
 from pathlib import Path
 import h5py
 from scipy.misc import imread, imresize
+from text_preprocessor import preprocess_text
 
 home = str(Path.home())
 modes = ['train', 'val']
@@ -27,10 +28,10 @@ clevr_q_dict = {'count': 'count',
                 'query_color': 'query_attribute'}
 
 
-def make_questions(data_dir, dataset, top_k=None, multi_label=False, tokenizer='rm'):
+def make_questions(data_dir, dataset, top_k=None, multi_label=False, q_tokenizer='none', a_tokenizer='none'):
     print(f"Start making {dataset} data pickle")
     if top_k and dataset == 'vqa2':
-        top_k_words = get_top_answers(data_dir, dataset, top_k, multi_label)
+        top_k_words = get_top_answers(data_dir, dataset, top_k, multi_label, a_tokenizer)
     query = 'type' if dataset == 'sample' else 'function'
     q_corpus = set()
     a_corpus = set()
@@ -65,7 +66,7 @@ def make_questions(data_dir, dataset, top_k=None, multi_label=False, tokenizer='
                 annotations = json.load(f)["annotations"]
             for q_obj in annotations:
                 if not multi_label:
-                    answer_word = [q_obj["multiple_choice_answer"]]
+                    answer_word = [' '.join(preprocess_text(q_obj["multiple_choice_answer"], a_tokenizer))]
                     if top_k and answer_word[0] not in top_k_words:
                         continue
                 else:
@@ -73,10 +74,10 @@ def make_questions(data_dir, dataset, top_k=None, multi_label=False, tokenizer='
                     answer_word = list()
                     for word in answer_words:
                         if top_k and word["answer"] in top_k_words:
-                            answer_word.append(word["answer"])
+                            answer_word.append(' '.join(preprocess_text(word["answer"], a_tokenizer)))
                 image_id = q_obj['image_id']
                 image_dir = f'COCO_{mode}2014_{str(image_id).zfill(12)}.jpg'
-                question_words = preprocess_questions(question_list[q_obj['question_id']], tokenizer)
+                question_words = preprocess_text(question_list[q_obj['question_id']], q_tokenizer)
                 answer_type = q_obj["answer_type"]
                 q_corpus.update(question_words)
                 a_corpus.update(answer_word)
@@ -107,12 +108,12 @@ def make_questions(data_dir, dataset, top_k=None, multi_label=False, tokenizer='
                  'question_type_to_idx': question_type_to_idx,
                  'idx_to_question_type': idx_to_question_type
                  }
-    with open(os.path.join(data_dir, dataset, f'data_dict_{top_k}_{multi_label}_{tokenizer}.pkl'), 'wb') as file:
+    with open(os.path.join(data_dir, dataset, f'data_dict_{top_k}_{multi_label}_{q_tokenizer}_{a_tokenizer}.pkl'), 'wb') as file:
         pickle.dump(data_dict, file, protocol=pickle.HIGHEST_PROTOCOL)
-    print(f'data_dict_{top_k}_{multi_label}_{tokenizer}.pkl saved')
+    print(f'data_dict_{top_k}_{multi_label}_{q_tokenizer}_{a_tokenizer}.pkl saved')
     print(f"Start making {dataset} question data")
     for mode in modes:
-        with h5py.File(os.path.join(data_dir, dataset, f'questions_{mode}_{top_k}_{multi_label}_{tokenizer}.h5'), 'w') as f:
+        with h5py.File(os.path.join(data_dir, dataset, f'questions_{mode}_{top_k}_{multi_label}_{q_tokenizer}_{a_tokenizer}.h5'), 'w') as f:
             q_dset = None
             for n, (image_dir, image_id, q_word_list, answer_word, q_type) in enumerate(qa_list[mode]):
                 if q_dset is None:
@@ -126,7 +127,7 @@ def make_questions(data_dir, dataset, top_k=None, multi_label=False, tokenizer='
                 a_dset[n] = [answer_word_to_idx[word] for word in answer_word]
                 ii_dset[n] = image_id
                 qt_dset[n] = question_type_to_idx[q_type]
-        print(f"questions_{mode}_{top_k}_{multi_label}_{tokenizer}.h5' saved")
+        print(f"questions_{mode}_{top_k}_{multi_label}_{q_tokenizer}_{a_tokenizer}.h5' saved")
 
 
 def make_images(data_dir, dataset, size, batch_size=128, max_images=None):
@@ -220,48 +221,7 @@ def run_batch(cur_batch, model, dataset):
     return feats
 
 
-def tokenize_mcb(s):
-    t_str = s.lower()
-    for i in [r'\?',r'\!',r'\'',r'\"',r'\$',r'\:',r'\@',r'\(',r'\)',r'\,',r'\.',r'\;']:
-        t_str = re.sub( i, '', t_str)
-    for i in [r'\-',r'\/']:
-        t_str = re.sub( i, ' ', t_str)
-    q_list = re.sub(r'\?','',t_str.lower()).split(' ')
-    q_list = list(filter(lambda x: len(x) > 0, q_list))
-    return q_list
-
-
-def tokenize_rm(sentence):
-    return [i for i in re.split(r"([-.\"',:? !\$#@~()*&\^%;\[\]/\\\+<>\n=])", sentence) if i!='' and i!=' ' and i!='\n'];
-
-
-def tokenize_active(question):
-    question_text = question.lower()
-    question_text = question_text.replace("'s", " 's").replace("'til ", ' until ') \
-        .replace('+', ' plus ').replace('$', ' dollars ').replace('#', ' number ').replace('%', ' percent ') \
-        .replace('&', ' and ').replace(';', ' ; ')
-    question_text = re.sub('[!>:,`\_\^\(\)\*\?\.\'"]+', "", question_text)
-    question_text = re.sub('[\/\-"]+', " ", question_text)
-    question_words = question_text.split(' ')
-    return question_words
-
-
-def preprocess_questions(sentence, nlp=None):
-    if nlp == 'nltk':
-        from nltk.tokenize import word_tokenize
-        question_words = word_tokenize(str(sentence).lower())
-    elif nlp == 'mcb':
-        question_words = tokenize_mcb(sentence)
-    elif nlp == 'act':
-        question_words = tokenize_active(sentence)
-    elif nlp == 'rm':
-        question_words = tokenize_rm(sentence)
-    else:
-        raise NameError(nlp)
-    return question_words
-
-
-def get_top_answers(data_dir, dataset, top_k, multi_label):
+def get_top_answers(data_dir, dataset, top_k, multi_label, a_tokenizer):
     answer_corpus = list()
     for mode in modes:
         annotation_file = os.path.join(data_dir, dataset, 'v2_mscoco_{}2014_annotations.json'.format(mode))
@@ -269,14 +229,16 @@ def get_top_answers(data_dir, dataset, top_k, multi_label):
             annotations = json.load(f)["annotations"]
         for q_obj in annotations:
             if not multi_label:
-                answer_word = q_obj["multiple_choice_answer"]
+                answer_word = ' '.join(preprocess_text(q_obj["multiple_choice_answer"], a_tokenizer))
+
                 answer_corpus.append(answer_word)
             else:
                 answers = q_obj["answers"]
                 for answer in answers:
-                    answer_corpus.append(answer["answer"])
+                    answer_corpus.append(' '.join(preprocess_text(answer["answer"], a_tokenizer)))
     top_k_words = set([i for (i, j) in Counter(answer_corpus).most_common(top_k)])
     return top_k_words
+
 
 if __name__ =='__main__':
     data_directory = os.path.join(home, 'data')

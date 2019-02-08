@@ -29,7 +29,8 @@ def get_config():
     data_arg.add_argument('--input-w', type=int)
     data_arg.add_argument('--top-k', type=int)
     data_arg.add_argument('--multi-label', action='store_true')
-    data_arg.add_argument('--tokenizer', type=str, default='rm', choices=['nltk', 'mcb', 'act', 'rm'])
+    data_arg.add_argument('--q-tokenizer', type=str, default='rm', choices=['none', 'nltk', 'rm', 'mcb', 'act', 'myact'])
+    data_arg.add_argument('--a-tokenizer', type=str, default='none', choices=['none', 'nltk', 'rm', 'mcb', 'act', 'myact'])
     data_arg.add_argument('--text-max', type=int)
 
     train_arg = parser.add_argument_group('Train')
@@ -110,7 +111,8 @@ def get_config():
         torch.cuda.set_device(args.device)
         args.device = torch.device(args.device)
 
-    args.data_config = [args.input_h, args.input_w, args.cpu_num, args.cv_pretrained, args.top_k, args.multi_label, args.tokenizer, args.text_max]
+    args.data_config = [args.input_h, args.input_w, args.cpu_num, args.cv_pretrained, args.top_k,
+                        args.multi_label, args.q_tokenizer, args.a_tokenizer, args.text_max]
 
     config_list = [args.project, args.model, args.dataset, args.epochs, args.batch_size, args.lr,
                    args.weight_decay, args.gradient_clipping,
