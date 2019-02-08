@@ -42,7 +42,7 @@ def load_dataloader(data_directory, dataset, is_train, batch_size=128, data_conf
         transform = transforms.Compose([transforms.Resize((input_h, input_w)), transforms.ToTensor()])
     dataloader = DataLoader(
         VQA(data_directory, dataset, train=is_train, cv_pretrained=cv_pretrained, transform=transform,
-            size=(input_h, input_w), top_k=top_k, multi_label=multi_label, q_tokenizer=tokenizer, a_tokenizer=tokenizer, text_max=text_max),
+            size=(input_h, input_w), top_k=top_k, multi_label=multi_label, q_tokenizer=q_tokenizer, a_tokenizer=a_tokenizer, text_max=text_max),
         batch_size=batch_size, shuffle=True,
         num_workers=cpu_num, pin_memory=True,
         collate_fn=collate_text)
