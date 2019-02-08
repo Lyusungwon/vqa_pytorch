@@ -133,8 +133,7 @@ def make_images(data_dir, dataset, size, batch_size=128, max_images=None):
     print(f"Start making {dataset} image pickle")
     model_name = 'resnet152' if dataset == 'vqa2' else 'resnet101'
     image_type = 'jpg' if dataset == 'vqa2' else 'png'
-    stage = 3 if size[0] <=300 else 4
-    model = build_model(model_name, stage)
+    model = build_model(model_name, size[0])
     img_size = size
     idx_dict = dict()
     for mode in modes:
@@ -189,23 +188,20 @@ def make_images(data_dir, dataset, size, batch_size=128, max_images=None):
         print('idx_dict.pkl saved')
 
 
-def build_model(model, stage=4):
+def build_model(model, size):
     import torchvision.models
     if not hasattr(torchvision.models, model):
         raise ValueError('Invalid model "%s"' % model)
     if not 'resnet' in model:
         raise ValueError('Feature extraction only supports ResNets')
     cnn = getattr(torchvision.models, model)(pretrained=True)
-    layers = [
-        cnn.conv1,
-        cnn.bn1,
-        cnn.relu,
-        cnn.maxpool,
-    ]
-    for i in range(stage):
-        name = 'layer%d' % (i + 1)
-        layers.append(getattr(cnn, name))
-    layers.append(torch.nn.AvgPool2d(2, 2, 0))
+    if size == 224:
+        layers = list(cnn.children())[:-2]
+    elif size == 448:
+        layers = list(cnn.children())[:-2]
+        layers.append(torch.nn.AvgPool2d(2, 2, 0))
+    else:
+        raise AssertionError("Invalid size")
     model = torch.nn.Sequential(*layers)
     model.cuda()
     model.eval()

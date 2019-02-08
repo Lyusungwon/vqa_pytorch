@@ -34,14 +34,15 @@ def collate_text(list_inputs):
     return images, (padded_questions, q_length), answers, question_types
 
 
-def load_dataloader(data_directory, dataset, is_train=True, batch_size=128, data_config=[224, 224, 0, True, 0, False, None, 0]):
+def load_dataloader(data_directory, dataset, is_train, batch_size=128, data_config=[224, 224, 0, True, 0, False, 'rm', 0]):
     input_h, input_w, cpu_num, cv_pretrained, top_k, multi_label, tokenizer, text_max = data_config
     if cv_pretrained:
         transform = transforms.Compose([transforms.ToTensor()])
     else:
         transform = transforms.Compose([transforms.Resize((input_h, input_w)), transforms.ToTensor()])
     dataloader = DataLoader(
-        VQA(data_directory, dataset, train=is_train, cv_pretrained=cv_pretrained, transform=transform, size=(input_h, input_w), top_k=top_k, multi_label=multi_label, tokenizer=tokenizer, text_max=text_max),
+        VQA(data_directory, dataset, train=is_train, cv_pretrained=cv_pretrained, transform=transform,
+            size=(input_h, input_w), top_k=top_k, multi_label=multi_label, tokenizer=tokenizer, text_max=text_max),
         batch_size=batch_size, shuffle=True,
         num_workers=cpu_num, pin_memory=True,
         collate_fn=collate_text)
@@ -50,7 +51,8 @@ def load_dataloader(data_directory, dataset, is_train=True, batch_size=128, data
 
 class VQA(Dataset):
     """VQA dataset."""
-    def __init__(self, data_dir, dataset, train=True, cv_pretrained=True, transform=None, size=(224,224), top_k=0, multi_label=False, tokenizer='rm', text_max=14):
+    def __init__(self, data_dir, dataset, train=True, cv_pretrained=True, transform=None, size=(224,224),
+                 top_k=0, multi_label=False, tokenizer='rm', text_max=14):
         self.dataset = dataset
         self.mode = 'train' if train else 'val'
         self.cv_pretrained = cv_pretrained

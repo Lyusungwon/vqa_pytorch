@@ -1,4 +1,4 @@
-import torch
+import torch.nn as nn
 from layers import *
 from utils import *
 import numpy as np
@@ -12,10 +12,14 @@ class Mrn(nn.Module):
         pretrained_weight = load_pretrained_embedding(args.word_to_idx, args.te_embedding) if args.te_pretrained else None
         self.text_encoder = TextEncoder(args.q_size, args.te_embedding, args.te_type, args.te_hidden, args.te_layer, args.te_dropout, pretrained_weight)
         if args.cv_pretrained:
-            raise
-        else:
-            self.visual_encoder = load_pretrained_conv()
             filters = 2048 if args.dataset == 'vqa2' else 1024
+            self.visual_encoder = nn.AvgPool2d(7, 1, 0)
+        else:
+            filters = args.cv_filter
+            self.visual_encoder = nn.Sequential(
+                Conv(args.cv_filter, args.cv_kernel, args.cv_stride, args.cv_layer, args.cv_batchnorm),
+                nn.AvgPool2d(7, 1, 0)
+            )
         self.first_block = MrnBlock(filters, args.te_hidden, args.mrn_hidden)
         self.blocks = nn.ModuleList([MrnBlock(filters, args.mrn_hidden, args.mrn_hidden) for _ in range(args.mrn_layer - 1)])
         self.fc = nn.Linear(args.mrn_hidden, args.a_size)

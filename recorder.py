@@ -229,7 +229,8 @@ class Recorder:
         tf = NamedTemporaryFile(mode='w', delete=False)
         with open(self.csv_file, 'r') as rf, tf:
             reader = csv.DictReader(rf)
-            writer = csv.DictWriter(tf, fieldnames=reader.fieldnames)
+            writer = csv.DictWriter(tf, fieldnames=self.header)
+            writer.writeheader()
             for row in reader:
                 if row['timestamp'] == self.timestamp:
                     row["Finished"] = True
