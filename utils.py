@@ -90,7 +90,7 @@ def load_pretrained_conv():
 
 
 def load_dict(args):
-    dict_file = os.path.join(args.data_directory, args.dataset, f'data_dict_{args.top_k}_{args.multi_label}_{args.tokenizer}.pkl')
+    dict_file = os.path.join(args.data_directory, args.dataset, f'data_dict_{args.top_k}_{args.multi_label}_{args.q_tokenizer}_{args.a_tokenizer}.pkl')
     with open(dict_file, 'rb') as file:
         data_dict = pickle.load(file)
     args.word_to_idx = data_dict['word_to_idx']
