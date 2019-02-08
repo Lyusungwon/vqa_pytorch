@@ -91,6 +91,7 @@ def tokenize_rm(sentence):
 
 
 def tokenize_active(inText):
+    outText = inText 
     for p in punct:
         if (p + ' ' in inText or ' ' + p in inText) \
         or (re.search(comma_strip, inText) != None):
