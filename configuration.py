@@ -160,9 +160,14 @@ def get_config():
         print("Not an available model.")
 
     args.config = '_'.join(map(str, config_list))
+
     if args.load_model:
-        args.log = os.path.join(args.log_directory, args.project, args.load_model)
-        args.timestamp = args.load_model[:12]
+        args.timestamp = args.load_model
+        with os.scandir(os.path.join(args.log_directory, args.project)) as it:
+            for entry in it:
+                if entry.name.startswith(args.load_model):
+                    load_folder = entry.name
+        args.log = os.path.join(args.log_directory, args.project, load_folder)
     else:
         args.log = os.path.join(args.log_directory, args.project, args.timestamp + args.config)
 
