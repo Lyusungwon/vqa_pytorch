@@ -131,8 +131,8 @@ class Recorder:
 
     def log_text(self, question, answer, types):
         n = min(question.size()[0], 8)
-        question_text = [' '.join([self.idx_to_word[i] for i in q]) for q in question.cpu().numpy()[:n]]
-        answer_text = [self.answer_idx_to_word[a] for a in answer.cpu().numpy()[:n]]
+        question_text = [' '.join([self.idx_to_word[i] for i in q]) for q in question.numpy()[:n]]
+        answer_text = [', '.join([self.answer_idx_to_word[i] for i in a]) for a in answer.cpu().numpy()[:n]]
         question_type_text = [self.idx_to_question_type[qt] for qt in types.cpu().numpy()[:n]]
         for j, (question, answer, q_type) in enumerate(zip(question_text, answer_text, question_type_text)):
             self.writer.add_text(f'QA{j}', f'Quesetion: {question} / Answer: {answer} / Type: {q_type}', self.epoch_idx)

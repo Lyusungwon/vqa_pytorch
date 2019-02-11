@@ -49,9 +49,9 @@ def epoch(epoch_idx, is_train):
     if not is_train:
         if args.lr_reduce:
             reduce_scheduler.step(recorder.get_epoch_loss())
-        recorder.log_text(question, answer, types)
+        recorder.log_text(question.cpu(), answer.cpu(), types.cpu())
         if not args.cv_pretrained:
-            recorder.log_image(image)
+            recorder.log_image(image.cpu())
 
 
 if __name__ == '__main__':

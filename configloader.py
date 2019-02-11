@@ -184,6 +184,8 @@ def load_default_config(args):
             "mlb_hidden": 1200,
             "mlb_glimpse": 2,
         }
+    else:
+        raise NameError()
     ori_dict = vars(args)
     for key in arg_dict.keys():
         if ori_dict[key] is not None:

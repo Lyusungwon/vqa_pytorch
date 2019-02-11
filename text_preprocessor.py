@@ -75,6 +75,7 @@ punct = [
     '>', '<', '@', '`', ',', '?', '!'
 ]
 
+
 def tokenize_mcb(s):
     t_str = s.lower()
     for i in [r'\?',r'\!',r'\'',r'\"',r'\$',r'\:',r'\@',r'\(',r'\)',r'\,',r'\.',r'\;']:
@@ -114,6 +115,7 @@ def tokenize_active(inText):
 
 
 def tokenize_my_active(inText):
+    inText = inText.lower()
     for key, value in my_map.items():
         if key in inText:
             inText.replace(key, value)
