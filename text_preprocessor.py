@@ -88,7 +88,7 @@ def tokenize_mcb(s):
 
 
 def tokenize_rm(sentence):
-    return [i for i in re.split(r"([-.\"',:? !\$#@~()*&\^%;\[\]/\\\+<>\n=])", sentence) if i!='' and i!=' ' and i!='\n']
+    return [i for i in re.split(r"([-_.\"',:? !\$#@~()*&\^%;\[\]/\\\+<>\n=])", sentence) if i!='' and i!=' ' and i!='\n']
 
 
 def tokenize_active(inText):
