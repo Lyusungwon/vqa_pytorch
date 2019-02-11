@@ -71,6 +71,7 @@ def load_pretrained_embedding(word2idx, embedding_dim):
     import torchtext
     pretrained = torchtext.vocab.GloVe(name='6B', dim=embedding_dim)
     embedding = torch.Tensor(len(word2idx), embedding_dim)
+    missing = 0
     for word, idx in word2idx.items():
         word = tokenize_rm(word)[0]
         embedding[idx, :] = pretrained[word].data
