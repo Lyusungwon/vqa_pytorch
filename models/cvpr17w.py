@@ -31,7 +31,7 @@ class CVPR17W(nn.Module):
         aw = torch.softmax(self.wa(self.fa(torch.cat([i, qe], 2))), dim=1).transpose(1, 2)
         ai = torch.matmul(aw, i).squeeze(1)
         h = self.fq(q) * self.fv(ai)
-        logits = torch.sigmoid(self.wo(self.fo(h)))
+        logits = self.wo(self.fo(h))
         return logits
 
 
