@@ -28,8 +28,8 @@ class CVPR17W(nn.Module):
         i = i.view(b, c, -1).transpose(1, 2)  # b o c
         _, q = self.text_encoder(question, question_length)  # b q
         qe = q.unsqueeze(1).expand(-1, o, -1) # b o q
-        w = torch.softmax(self.wa(self.fa(torch.cat([i, qe], 2))), dim=1).transpose(1, 2)
-        ai = torch.matmul(w, i).squeeze(1)
+        aw = torch.softmax(self.wa(self.fa(torch.cat([i, qe], 2))), dim=1).transpose(1, 2)
+        ai = torch.matmul(aw, i).squeeze(1)
         h = self.fq(q) * self.fv(ai)
         logits = torch.sigmoid(self.wo(self.fo(h)))
         return logits

@@ -66,7 +66,7 @@ manual_map = {
     'ten': '10'
 }
 
-articles = ['a', 'an', 'the', '']
+articles = ['a', 'an', 'the']
 period_strip = re.compile("(?!<=\d)(\.)(?!\d)")
 comma_strip = re.compile("(\d)(\,)(\d)")
 punct = [
@@ -88,7 +88,7 @@ def tokenize_mcb(s):
 
 
 def tokenize_rm(sentence):
-    return [i for i in re.split(r"([-.\"',:? !\$#@~()*&\^%;\[\]/\\\+<>\n=])", sentence) if i!='' and i!=' ' and i!='\n'];
+    return [i for i in re.split(r"([-.\"',:? !\$#@~()*&\^%;\[\]/\\\+<>\n=])", sentence) if i!='' and i!=' ' and i!='\n']
 
 
 def tokenize_active(inText):
@@ -105,12 +105,11 @@ def tokenize_active(inText):
     for word in tempText:
         word = manual_map.setdefault(word, word)
         if word not in articles:
+            if word in contractions:
+                word = contractions[word]
             outText.append(word)
         else:
             pass
-    for wordId, word in enumerate(outText):
-        if word in contractions:
-            outText[wordId] = contractions[word]
     return outText
 
 

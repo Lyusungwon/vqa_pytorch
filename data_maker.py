@@ -83,8 +83,8 @@ def make_questions(data_dir, dataset, top_k=None, multi_label=False, q_tokenizer
                 a_corpus.update(answer_word)
                 qt_corpus.add(answer_type)
                 qa_list[mode].append((image_dir, image_id, question_words, answer_word, answer_type))
-    word_to_idx = {"<pad>": 0, "<eos>": 1}
-    idx_to_word = {0: "<pad>", 1: "<eos>"}
+    word_to_idx = {"<pad>": 0}
+    idx_to_word = {0: "<pad>"}
     answer_word_to_idx = dict()
     answer_idx_to_word = dict()
     question_type_to_idx = dict()

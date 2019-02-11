@@ -17,6 +17,7 @@ class Recorder:
         self.idx_to_question_type = args.idx_to_question_type
         self.idx_to_word = args.idx_to_word
         self.answer_idx_to_word = args.answer_idx_to_word
+        print(self.answer_idx_to_word)
         self.qt_size = args.qt_size
         self.multi_label = args.multi_label
         self.batch_record_idx = batch_record_idx
@@ -136,7 +137,8 @@ class Recorder:
             answer_text = list()
             for a in answer.cpu().numpy()[:n]:
                 for n, i in enumerate(a):
-                    answer_text.append(', '.join([f'{self.answer_idx_to_word[n]}({i})' for i in a]))
+                    if i.item() > 0:
+                        answer_text.append(', '.join([f'{self.answer_idx_to_word[n]}({i})' for i in a]))
         else:
             answer_text = [', '.join([self.answer_idx_to_word[i] for i in a]) for a in answer.cpu().numpy()[:n]]
         question_type_text = [self.idx_to_question_type[qt] for qt in types.cpu().numpy()[:n]]

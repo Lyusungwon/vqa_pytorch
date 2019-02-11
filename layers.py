@@ -9,7 +9,7 @@ class TextEncoder(nn.Module):
         self.embedding = nn.Embedding(vocab, embedding, padding_idx=0)
         if pretrained_weight is not None:
             self.embedding.weight.data.copy_(pretrained_weight)
-            self.embedding.weight.require_grad = False
+            # self.embedding.weight.require_grad = False
         if type == 'gru':
             self.seq = nn.GRU(embedding, hidden, num_layers=num_layer, dropout=dropout, bidirectional=False)
         elif type == 'lstm':
