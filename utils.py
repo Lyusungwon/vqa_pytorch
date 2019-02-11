@@ -71,9 +71,9 @@ def load_pretrained_embedding(word2idx, embedding_dim):
     pretrained = torchtext.vocab.GloVe(name='6B', dim=embedding_dim)
     embedding = torch.Tensor(len(word2idx), embedding_dim)
     for word, idx in word2idx.items():
-        if word != "<eos>":
-            embedding[idx, :] = pretrained[word].data
-    embedding[word2idx["<eos>"], :] = embedding.mean(0).data
+        embedding[idx, :] = pretrained[word].data
+        if sum(embedding[idx, :]) == 0:
+            print(word)
     print("Loaded pretrained embedding.")
     return embedding
 
