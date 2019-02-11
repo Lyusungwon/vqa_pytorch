@@ -21,7 +21,7 @@ class CVPR17W(nn.Module):
         self.fv = Gated_Tanh(filters, args.c17w_hidden)
         self.fo = Gated_Tanh(args.c17w_hidden, args.c17w_hidden)
         self.wo = nn.Linear(args.c17w_hidden, args.a_size)
-        self.do = nn.Dropout(c17w_dropout, inplace=True)
+        self.do = nn.Dropout(args.c17w_dropout, inplace=True)
 
     def forward(self, image, question, question_length):
         i = image if self.cv_pretrained else self.visual_encoder(image)
@@ -35,7 +35,6 @@ class CVPR17W(nn.Module):
         ai = torch.bmm(aw, i).squeeze(1)
         h = self.fq(q) * self.fv(ai)
         logits = self.do(self.wo(self.fo(h)))
-        )
         return logits
 
 

@@ -104,6 +104,7 @@ def get_config():
     model_arg.add_argument('--mlb-glimpse', type=int)
     # c17w
     model_arg.add_argument('--c17w-hidden', type=int)
+    model_arg.add_argument('--c17w-dropout', type=float)
 
     args, unparsed = parser.parse_known_args()
     args = load_default_config(args)

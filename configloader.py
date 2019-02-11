@@ -206,6 +206,7 @@ def load_default_config(args):
             "te_dropout": 0,
             "te_layer": 1,
             "c17w_hidden": 512,
+            "c17w_dropout": 0.5,
         }
     else:
         raise NameError()
