@@ -63,7 +63,7 @@ def load_checkpoint(model, optimizer, log, device):
     epoch_idx = checkpoint['epoch']
     batch_record_idx = checkpoint['batch_idx']
     print('Model loaded from {}.'.format(load_file))
-    return model, optimizer, epoch_idx, batch_record_idx
+    return model, optimizer, epoch_idx + 1, batch_record_idx + 1
 
 
 def load_pretrained_embedding(word2idx, embedding_dim):
