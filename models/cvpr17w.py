@@ -1,4 +1,5 @@
 import torch
+import torch.nn.functional as F
 from layers import *
 from utils import *
 
@@ -20,18 +21,21 @@ class CVPR17W(nn.Module):
         self.fv = Gated_Tanh(filters, args.c17w_hidden)
         self.fo = Gated_Tanh(args.c17w_hidden, args.c17w_hidden)
         self.wo = nn.Linear(args.c17w_hidden, args.a_size)
+        self.do = nn.Dropout(c17w_dropout, inplace=True)
 
     def forward(self, image, question, question_length):
         i = image if self.cv_pretrained else self.visual_encoder(image)
         b, c, h, w = i.size()
         o = h * w
         i = i.view(b, c, -1).transpose(1, 2)  # b o c
+        i = F.normalize(i, -1)
         _, q = self.text_encoder(question, question_length)  # b q
         qe = q.unsqueeze(1).expand(-1, o, -1) # b o q
         aw = torch.softmax(self.wa(self.fa(torch.cat([i, qe], 2))), dim=1).transpose(1, 2)
-        ai = torch.matmul(aw, i).squeeze(1)
+        ai = torch.bmm(aw, i).squeeze(1)
         h = self.fq(q) * self.fv(ai)
-        logits = self.wo(self.fo(h))
+        logits = self.do(self.wo(self.fo(h)))
+        )
         return logits
 
 

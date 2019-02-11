@@ -133,11 +133,13 @@ class Recorder:
         n = min(question.size()[0], 8)
         question_text = [' '.join([self.idx_to_word[i] for i in q]) for q in question.numpy()[:n]]
         if self.multi_label:
-            answer_text = list()
-            for a in answer.cpu().numpy()[:n]:
+            answer_texts = list()
+            for a in answer.numpy()[:n]:
+                answer_text = list()
                 for n, i in enumerate(a):
-                    if i.item() > 0:
-                        answer_text.append(', '.join([f'{self.answer_idx_to_word[n]}({j})' for j in i]))
+                    if i > 0:
+                        answer_text.append(f'{self.answer_idx_to_word[n]}({i})')
+                answer_texts.append(', '.join(answer_text))
         else:
             answer_text = [', '.join([self.answer_idx_to_word[i] for i in a]) for a in answer.numpy()[:n]]
         question_type_text = [self.idx_to_question_type[qt] for qt in types.cpu().numpy()[:n]]
