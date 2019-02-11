@@ -166,7 +166,7 @@ def load_default_config(args):
             "input_h": 448,
             "input_w": 448,
             "top_k": 2000,
-            "multi_label": True,
+            "multi_label": False,
             "batch_size": 64,
             "epochs": 100,
             "lr": 2.5e-4,
@@ -183,6 +183,29 @@ def load_default_config(args):
             "te_layer": 1,
             "mlb_hidden": 1200,
             "mlb_glimpse": 2,
+        }
+    elif args.model == 'c17w':
+        arg_dict = {
+            "dataset": "vqa2",
+            "input_h": 448,
+            "input_w": 448,
+            "top_k": 3129,
+            "multi_label": True,
+            "batch_size": 512,
+            "epochs": 100,
+            "lr": 2.5e-4,
+            "weight_decay": 0,
+            "gradient_clipping": 10.0,
+            "cv_filter": 512,
+            "cv_kernel": 3,
+            "cv_stride": 2,
+            "cv_layer": 5,
+            "te_type": 'gru',
+            "te_embedding": 300,
+            "te_hidden": 2400,
+            "te_dropout": 0,
+            "te_layer": 1,
+            "c17w_hidden": 512,
         }
     else:
         raise NameError()

@@ -13,6 +13,7 @@ from models.sarn import Sarn
 from models.san import San
 from models.mrn import Mrn
 from models.mlb import Mlb
+from models.cvpr17w import CVPR17W
 
 home = str(Path.home())
 
@@ -20,7 +21,7 @@ home = str(Path.home())
 def get_config():
     parser = argparse.ArgumentParser(description='parser')
     parser.add_argument('--project', type=str, default='vqa')
-    parser.add_argument('--model', type=str, choices=['basern', 'rn', 'sarn', 'san', 'mrn', 'mlb', 'film'])
+    parser.add_argument('--model', type=str, choices=['basern', 'rn', 'sarn', 'san', 'mrn', 'mlb', 'c17w', 'film'])
 
     data_arg = parser.add_argument_group('Data')
     data_arg.add_argument('--data-directory', type=str, default=os.path.join(home, 'data'), help='directory of data')
@@ -101,6 +102,8 @@ def get_config():
     # mln
     model_arg.add_argument('--mlb-hidden', type=int)
     model_arg.add_argument('--mlb-glimpse', type=int)
+    # c17w
+    model_arg.add_argument('--c17w-hidden', type=int)
 
     args, unparsed = parser.parse_known_args()
     args = load_default_config(args)
@@ -158,6 +161,10 @@ def get_config():
         config_list = config_list + \
             ['mlb', args.mlb_hidden, args.mlb_glimpse, args.memo]
         model = Mlb(args)
+    elif args.model == 'c17w':
+        config_list = config_list + \
+                      ['c17w', args.c17w_hidden, args.memo]
+        model = CVPR17W(args)
     else:
         print("Not an available model.")
 
