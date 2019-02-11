@@ -137,12 +137,14 @@ class Recorder:
             for a in answer.cpu().numpy()[:n]:
                 for n, i in enumerate(a):
                     if i.item() > 0:
-                        answer_text.append(', '.join([f'{self.answer_idx_to_word[n]}({i})' for i in a]))
+                        answer_text.append(', '.join([f'{self.answer_idx_to_word[n]}({j})' for j in i]))
         else:
-            answer_text = [', '.join([self.answer_idx_to_word[i] for i in a]) for a in answer.cpu().numpy()[:n]]
+            answer_text = [', '.join([self.answer_idx_to_word[i] for i in a]) for a in answer.numpy()[:n]]
         question_type_text = [self.idx_to_question_type[qt] for qt in types.cpu().numpy()[:n]]
+        qa_text = list()
         for j, (question, answer, q_type) in enumerate(zip(question_text, answer_text, question_type_text)):
-            self.writer.add_text(f'QA{j}', f'Quesetion: {question} / Answer: {answer} / Type: {q_type}', self.epoch_idx)
+            qa_text.append(f'Quesetion: {question} / Answer: {answer} / Type: {q_type}')
+        self.writer.add_text(f'QA', ' \n '.join(qa_text), self.epoch_idx)
 
     def get_epoch_loss(self):
         return self.epoch_loss / self.dataset_size

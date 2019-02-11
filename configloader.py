@@ -191,7 +191,7 @@ def load_default_config(args):
             "input_w": 448,
             "top_k": 3129,
             "multi_label": True,
-            "text_max": 14,
+            # "text_max": 14,
             "batch_size": 512,
             "epochs": 100,
             "lr": 2.5e-4,

@@ -3,6 +3,7 @@ import torch
 import torch.nn as nn
 import time
 import pickle
+from text_preprocessor import tokenize_rm
 
 
 def timefn(fn):
@@ -71,10 +72,12 @@ def load_pretrained_embedding(word2idx, embedding_dim):
     pretrained = torchtext.vocab.GloVe(name='6B', dim=embedding_dim)
     embedding = torch.Tensor(len(word2idx), embedding_dim)
     for word, idx in word2idx.items():
+        word = tokenize_rm(word)[0]
         embedding[idx, :] = pretrained[word].data
         if sum(embedding[idx, :]) == 0:
+            missing += 1
             print(word)
-    print("Loaded pretrained embedding.")
+    print(f"Loaded pretrained embedding({(len(word2idx) - missing)/len(word2idx)}).")
     return embedding
 
 
