@@ -17,7 +17,6 @@ class Recorder:
         self.idx_to_question_type = args.idx_to_question_type
         self.idx_to_word = args.idx_to_word
         self.answer_idx_to_word = args.answer_idx_to_word
-        print(self.answer_idx_to_word)
         self.qt_size = args.qt_size
         self.multi_label = args.multi_label
         self.batch_record_idx = batch_record_idx
