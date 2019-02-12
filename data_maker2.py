@@ -93,7 +93,7 @@ def make_text(data_dir, dataset, tokenizers):
                     preprocessed_text = preprocess_text(question_list[q_obj['question_id']], tokenizer)
                     for word in preprocessed_text:
                         if word not in q2i_dict[tokenizer]:
-                            q2i_dict[tokenizer][word] = len(question_dict[tokenizer])
+                            q2i_dict[tokenizer][word] = len(q2i_dict[tokenizer])
                     q_tokenizers[tokenizer]['data'][idx] = [q2i_dict[tokenizer][word] for word in preprocessed_text]
 
                     preprocessed_word = preprocess_text(q_obj["multiple_choice_answer"], tokenizer)
