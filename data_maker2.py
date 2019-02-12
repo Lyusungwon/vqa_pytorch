@@ -108,7 +108,7 @@ def make_text(data_dir, dataset, tokenizers):
                     for preprocessed_word in preprocessed_words:
                         if preprocessed_word not in ma2i_dict[tokenizer]:
                             ma2i_dict[tokenizer][preprocessed_word] = len(ma2i_dict[tokenizer])
-                    multi_a_tokenizers[tokenizer]['data'][idx] = [ua2i_dict[tokenizer][preprocessed_word] for preprocessed_word in preprocessed_words]
+                    ma_tokenizers[tokenizer]['data'][idx] = [ma2i_dict[tokenizer][preprocessed_word] for preprocessed_word in preprocessed_words]
             print(f"{mode} dataset")
 
             for tokenizer in tokenizers:
