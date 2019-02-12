@@ -131,23 +131,20 @@ class Recorder:
 
     def log_text(self, question, answer, types):
         n = min(question.size()[0], 8)
-        question_text = [' '.join([self.idx_to_word[i] for i in q]) for q in question.numpy()[:n]]
+        question_texts = [' '.join([self.idx_to_word[i] for i in q]) for q in question.numpy()[:n]]
         if self.multi_label:
             answer_texts = list()
             for a in answer.numpy()[:n]:
                 answer_text = list()
                 for n, i in enumerate(a):
                     if i > 0:
-                        answer_text.append(f'{self.answer_idx_to_word[n]}({i})')
+                        answer_text.append("%s($.2f)" % (self.answer_idx_to_word[n], i))
                 answer_texts.append(', '.join(answer_text))
         else:
-            answer_text = [', '.join([self.answer_idx_to_word[i] for i in a]) for a in answer.numpy()[:n]]
-        print(question_text)
-        print(answer_texts)
-        print(question_type_text)
-        question_type_text = [self.idx_to_question_type[qt] for qt in types.cpu().numpy()[:n]]
+            answer_texts = [', '.join([self.answer_idx_to_word[i] for i in a]) for a in answer.numpy()[:n]]
+        question_type_texts = [self.idx_to_question_type[qt] for qt in types.cpu().numpy()[:n]]
         qa_text = list()
-        for j, (question, answer, q_type) in enumerate(zip(question_text, answer_texts, question_type_text)):
+        for j, (question, answer, q_type) in enumerate(zip(question_texts, answer_texts, question_type_texts)):
             qa_text.append(f'Quesetion: {question} / Answer: {answer} / Type: {q_type}')
         self.writer.add_text(f'QA', ' \n '.join(qa_text), self.epoch_idx)
 
