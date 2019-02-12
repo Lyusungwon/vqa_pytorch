@@ -87,7 +87,7 @@ def make_text(data_dir, dataset, tokenizers):
                 qt_raw[idx] = q_obj["answer_type"]
                 if q_obj["answer_type"] not in qt2i_dict:
                     qt2i_dict[q_obj["answer_type"]] = len(qt2i_dict)
-                qt_data[idx] = qt2i_dict(q_obj["answer_type"])
+                qt_data[idx] = qt2i_dict[q_obj["answer_type"]]
 
                 for tokenizer in tokenizers:
                     preprocessed_text = preprocess_text(question_list[q_obj['question_id']], tokenizer)
