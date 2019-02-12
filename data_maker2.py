@@ -67,11 +67,11 @@ def make_text(data_dir, dataset, tokenizers):
             ua_words = defaultdict(list)
             ma_words = defaultdict(list)
             for tokenizer in tokenizers:
-                tq = ua.create_group(tokenizer)
+                tq = q.create_group(tokenizer)
                 q_tokenizers[tokenizer]['data'] = tq.create_dataset('data', (N,), dtype=intd)
                 ta = ua.create_group(tokenizer)
                 ua_tokenizers[tokenizer]['data'] = ta.create_dataset('data', (N,), dtype='int32')
-                ta = ua.create_group(tokenizer)
+                ta = ma.create_group(tokenizer)
                 ma_tokenizers[tokenizer]['data'] = ta.create_dataset('data', (N, 10), dtype='int32')
                 q2i_dict[tokenizer] = {"<pad>": 0}
                 ua2i_dict[tokenizer] = {"<pad>": 0}
