@@ -142,6 +142,9 @@ class Recorder:
                 answer_texts.append(', '.join(answer_text))
         else:
             answer_text = [', '.join([self.answer_idx_to_word[i] for i in a]) for a in answer.numpy()[:n]]
+        print(question_text)
+        print(answer_text)
+        print(question_type_text)
         question_type_text = [self.idx_to_question_type[qt] for qt in types.cpu().numpy()[:n]]
         qa_text = list()
         for j, (question, answer, q_type) in enumerate(zip(question_text, answer_text, question_type_text)):

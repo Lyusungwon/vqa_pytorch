@@ -111,7 +111,7 @@ def load_dict(args):
 
 def to_onehot(a, a_size):
     onehot = torch.zeros(len(a), a_size)
-    divide = 3.0 if len(a) > 2 else 1.0
+    divide = 3.0 if len(a) > 1 else 1.0
     onehot[[i for i in range(len(a))], a] = 1.0
     onehot = torch.min(onehot.sum(0) / divide, torch.ones(1)).unsqueeze(0)
     # onehot = onehot.sum(0).unsqueeze(0) / float(len(a))
