@@ -27,6 +27,13 @@ clevr_q_dict = {'count': 'count',
                 'query_material': 'query_attribute',
                 'query_color': 'query_attribute'}
 
+def make_questions(data_dir, dataset):
+    if dataset == 'vqa2':
+        make_vqa_text(data_dir, dataset, ['none', 'rm', 'nltk', 'act', 'myact'])
+    elif dataset == 'clevr':
+        make_clevr_text(data_dir, dataset)
+    else:
+        raise NameError(dataset)
 
 def make_vqa_text(data_dir, dataset, tokenizers):
     print(f"Start making {dataset} qa data")
@@ -61,7 +68,7 @@ def make_vqa_text(data_dir, dataset, tokenizers):
             q_tokenizers = defaultdict(dict)
             ua_tokenizers = defaultdict(dict)
             ma_tokenizers = defaultdict(dict)
-            qt_tokenizers = dict()
+            qt_dict = dict()
             q2i_dict = defaultdict(dict)
             ua2i_dict = defaultdict(dict)
             ma2i_dict = defaultdict(dict)
@@ -136,13 +143,13 @@ def make_vqa_text(data_dir, dataset, tokenizers):
                 for word, idx in ma2i_dict[tokenizer].items():
                     ma_tokenizers[tokenizer]['count'][idx] = ma_counter[word]
             qtn = len(qt2i_dict)
-            qt_tokenizers['dict'] = tq.create_dataset('dict', (qtn,), dtype=strd)
-            qt_tokenizers['count'] = tq.create_dataset('count', (qtn,), dtype='int32')
+            qt_dict['dict'] = qt.create_dataset('dict', (qtn,), dtype=strd)
+            qt_dict['count'] = qt.create_dataset('count', (qtn,), dtype='int32')
             for word, idx in qt2i_dict.items():
-                qt_tokenizers['dict'][idx] = word
+                qt_dict['dict'][idx] = word
             qt_counter = Counter(qt_words)
             for word, idx in qt2i_dict.items():
-                qt_tokenizers['count'][idx] = qt_counter[word]
+                qt_dict['count'][idx] = qt_counter[word]
             print(f"{mode} finished")
 
 

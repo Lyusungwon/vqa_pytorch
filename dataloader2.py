@@ -60,14 +60,23 @@ class VQA(Dataset):
         self.transform = transform
         self.cv_pretrained = cv_pretrained
         self.top_k = top_k
-        self.multi_label = multi_label
+        self.multi_label = 'multi-label' if multi_label else 'uni-label'
         self.q_tokenizer = q_tokenizer
         self.a_tokenizer = a_tokenizer
         self.text_max = text_max
 
         self.question_file = os.path.join(data_dir, dataset, f'qa_sets_{dataset}.h5')
         if not is_file_exist(self.question_file):
-            make_questions(data_dir, dataset, top_k, multi_label, q_tokenizer, a_tokenizer)
+            make_questions(data_dir, dataset)
+        self.load_data()
+
+    def load_data(self):
+        data = h5py.File(self.question_file, 'r', swmr=True)
+        if self.dataset == 'vqa2':
+            self.question = data['question'][self.q_tokenizer]
+            self.answer = data['answer'][self.multi_label][self.a_tokenizer]
+            self.question_type = data['answer']
+
         if self.multi_label:
             self.data_file = os.path.join(data_dir, dataset, f'data_dict_{top_k}_{multi_label}_{q_tokenizer}_{a_tokenizer}.pkl')
             print(f"Start loading {self.data_file}")
@@ -92,7 +101,6 @@ class VQA(Dataset):
         return h5py.File(self.question_file, 'r', swmr=True)['questions'].shape[0]
 
     def __getitem__(self, idx):
-        question_file = h5py.File(self.question_file, 'r', swmr=True)
         q = question_file['questions'][idx]
         a = question_file['answers'][idx]
         q_t = question_file['question_types'][idx]
