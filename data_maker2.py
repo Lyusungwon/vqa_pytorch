@@ -44,7 +44,7 @@ def make_vqa_text(data_dir, dataset, tokenizers):
             annotations = json.load(f)["annotations"]
         strd = h5py.special_dtype(vlen=str)
         intd = h5py.special_dtype(vlen=np.dtype('int32'))
-        with h5py.File(os.path.join(data_dir, dataset, f'qa_sets_{dataset}.h5'), 'w') as f:
+        with h5py.File(os.path.join(data_dir, dataset, f'qa_sets_{dataset}_{mode}.h5'), 'w') as f:
             image_id = f.create_dataset('image_ids', (N,), dtype='int32')
             q = f.create_group("question")
             q_raw = q.create_dataset('raw', (N,), dtype=strd)
@@ -145,6 +145,7 @@ def make_vqa_text(data_dir, dataset, tokenizers):
                 qt_tokenizers['count'][idx] = qt_counter[word]
             print(f"{mode} finished")
 
+
 def make_clevr_text(data_dir, dataset):
     print(f"Start making {dataset} qa data")
     query = 'type' if dataset == 'sample' else 'function'
@@ -215,10 +216,6 @@ def make_clevr_text(data_dir, dataset):
             for word, idx in qt2i_dict.items():
                 qt_dict[idx] = word
             print(f"{mode} finished")
-
-
-
-
 
 
 if __name__ =='__main__':
