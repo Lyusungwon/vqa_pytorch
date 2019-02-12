@@ -103,7 +103,7 @@ def make_text(data_dir, dataset, tokenizers):
                         ua2i_dict[tokenizer][preprocessed_word] = len(ua2i_dict[tokenizer])
                     ua_tokenizers[tokenizer]['data'][idx] = ua2i_dict[tokenizer][preprocessed_word]
 
-                    preprocessed_words = [preprocess_text(answer, tokenizer) for answer in answer_words]
+                    preprocessed_words = [' '.join(preprocess_text(answer, tokenizer)) for answer in answer_words]
                     ma_words[tokenizer].extend(preprocessed_words)
                     for preprocessed_word in preprocessed_words:
                         if preprocessed_word not in ma2i_dict[tokenizer]:
