@@ -56,7 +56,7 @@ def make_vqa_text(data_dir, dataset, tokenizers):
             ma_raw = ma.create_dataset('raw', (N, 10), dtype=strd)
             qt = f.create_group("question_type")
             qt_raw = qt.create_dataset('raw', (N,), dtype=strd)
-            qt_data = qt.create_dataset('data', (N,), dtype=strd)
+            qt_data = qt.create_dataset('data', (N,), dtype='int32')
 
             q_tokenizers = defaultdict(dict)
             ua_tokenizers = defaultdict(dict)
