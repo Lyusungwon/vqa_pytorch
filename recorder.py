@@ -143,11 +143,11 @@ class Recorder:
         else:
             answer_text = [', '.join([self.answer_idx_to_word[i] for i in a]) for a in answer.numpy()[:n]]
         print(question_text)
-        print(answer_text)
+        print(answer_texts)
         print(question_type_text)
         question_type_text = [self.idx_to_question_type[qt] for qt in types.cpu().numpy()[:n]]
         qa_text = list()
-        for j, (question, answer, q_type) in enumerate(zip(question_text, answer_text, question_type_text)):
+        for j, (question, answer, q_type) in enumerate(zip(question_text, answer_texts, question_type_text)):
             qa_text.append(f'Quesetion: {question} / Answer: {answer} / Type: {q_type}')
         self.writer.add_text(f'QA', ' \n '.join(qa_text), self.epoch_idx)
 
