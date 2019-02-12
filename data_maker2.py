@@ -223,8 +223,8 @@ def make_clevr_text(data_dir, dataset):
 
 if __name__ =='__main__':
     data_directory = os.path.join(home, 'data')
-    # make_vqa_text(data_dir=data_directory, dataset='vqa2', tokenizers=['none', 'rm', 'nltk', 'act', 'myact'])
-    make_clevr_text(data_dir=data_directory, dataset='sample')
+    make_vqa_text(data_dir=data_directory, dataset='vqa2', tokenizers=['none', 'rm', 'nltk', 'act', 'myact'])
+    # make_clevr_text(data_dir=data_directory, dataset='sample')
     # make_images(data_directory, 'sample', (448, 448), 5, 100)
     # make_questions(data_directory, 'sample')
     # make_images(data_directory, 'sample', (224, 224), 5, 100)
