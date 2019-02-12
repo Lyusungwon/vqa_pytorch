@@ -27,9 +27,8 @@ clevr_q_dict = {'count': 'count',
                 'query_color': 'query_attribute'}
 
 
-def make_text(data_dir, dataset):
+def make_text(data_dir, dataset, tokenizers):
     print(f"Start making {dataset} qa data")
-    tokenizers = ['nltk', 'mcb', 'rm', 'act', 'myact']
     modes = ['train', 'val']
     for mode in modes:
         question_list = {}
@@ -67,7 +66,7 @@ def make_text(data_dir, dataset):
             qt2i_dict = dict()
             ua_words = defaultdict(list)
             ma_words = defaultdict(list)
-            for tokenizer in toknizers:
+            for tokenizer in tokenizers:
                 tq = ua.create_group(tokenizer)
                 q_tokenizers[tokenizer]['data'] = tq.create_dataset('data', (N,), dtype=intd)
                 ta = ua.create_group(tokenizer)
@@ -147,7 +146,7 @@ def make_text(data_dir, dataset):
 
 if __name__ =='__main__':
     data_directory = os.path.join(home, 'data')
-    make_text(data_dir=data_directory, dataset='vqa2')
+    make_text(data_dir=data_directory, dataset='vqa2', tokenizers=['none', 'rm', 'nltk', 'act', 'myact'])
     # make_images(data_directory, 'sample', (448, 448), 5, 100)
     # make_questions(data_directory, 'sample')
     # make_images(data_directory, 'sample', (224, 224), 5, 100)
