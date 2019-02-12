@@ -60,6 +60,7 @@ def make_text(data_dir, dataset, tokenizers):
             q_tokenizers = defaultdict(dict)
             ua_tokenizers = defaultdict(dict)
             ma_tokenizers = defaultdict(dict)
+            qt_tokenizers = dict()
             q2i_dict = defaultdict(dict)
             ua2i_dict = defaultdict(dict)
             ma2i_dict = defaultdict(dict)
@@ -100,7 +101,7 @@ def make_text(data_dir, dataset, tokenizers):
                     ua_words[tokenizer].append(preprocessed_word)
                     if preprocessed_word not in ua2i_dict[tokenizer]:
                         ua2i_dict[tokenizer][preprocessed_word] = len(ua2i_dict[tokenizer])
-                    uni_a_tokenizers[tokenizer]['data'][idx] = ua2i_dict[tokenizer][preprocessed_word]
+                    ua_tokenizers[tokenizer]['data'][idx] = ua2i_dict[tokenizer][preprocessed_word]
 
                     preprocessed_words = [preprocess_text(answer, tokenizer) for answer in answer_words]
                     ma_words[tokenizer].extend(preprocessed_words)
@@ -118,7 +119,7 @@ def make_text(data_dir, dataset, tokenizers):
 
                 uan = len(ua2i_dict)
                 ua_tokenizers[tokenizer]['dict'] = tq.create_dataset('dict', (uan,), dtype=strd)
-                uq_tokenizers[tokenizer]['count'] = tq.create_dataset('count', (uan,), dtype='int32')
+                ua_tokenizers[tokenizer]['count'] = tq.create_dataset('count', (uan,), dtype='int32')
                 for word, idx in ua2i_dict[tokenizer].items():
                     ua_tokenizers[tokenizer]['dict'][idx] = word
                 ua_counter = Counter(ua_words)
