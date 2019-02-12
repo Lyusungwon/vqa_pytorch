@@ -3,6 +3,7 @@ from collections import defaultdict, Counter
 import numpy as np
 import json
 import re
+from tqdm import tqdm
 import pickle
 import torch
 from pathlib import Path
@@ -27,7 +28,7 @@ clevr_q_dict = {'count': 'count',
                 'query_color': 'query_attribute'}
 
 
-def make_text(data_dir, dataset, tokenizers):
+def make_vqa_text(data_dir, dataset, tokenizers):
     print(f"Start making {dataset} qa data")
     modes = ['train', 'val']
     for mode in modes:
@@ -43,7 +44,7 @@ def make_text(data_dir, dataset, tokenizers):
             annotations = json.load(f)["annotations"]
         strd = h5py.special_dtype(vlen=str)
         intd = h5py.special_dtype(vlen=np.dtype('int32'))
-        with h5py.File(os.path.join(data_dir, dataset, f'qa_sets_{dataset}.h5'), 'w-') as f:
+        with h5py.File(os.path.join(data_dir, dataset, f'qa_sets_{dataset}.h5'), 'w') as f:
             image_id = f.create_dataset('image_ids', (N,), dtype='int32')
             q = f.create_group("question")
             q_raw = q.create_dataset('raw', (N,), dtype=strd)
@@ -78,7 +79,7 @@ def make_text(data_dir, dataset, tokenizers):
                 ua2i_dict[tokenizer] = {"<pad>": 0}
                 ma2i_dict[tokenizer] = {"<pad>": 0}
             print(f"{mode} layout")
-            for idx, q_obj in enumerate(annotations):
+            for idx, q_obj in enumerate(tqdm(annotations)):
                 image_id[idx] = q_obj['image_id']
                 q_raw[idx] = question_list[q_obj['question_id']]
                 q_id[idx] = q_obj['question_id']
@@ -144,10 +145,86 @@ def make_text(data_dir, dataset, tokenizers):
                 qt_tokenizers['count'][idx] = qt_counter[word]
             print(f"{mode} finished")
 
+def make_clevr_text(data_dir, dataset):
+    print(f"Start making {dataset} qa data")
+    query = 'type' if dataset == 'sample' else 'function'
+    modes = ['train', 'val']
+    for mode in modes:
+        question_file = os.path.join(data_dir, dataset, 'questions', 'CLEVR_{}_questions.json'.format(mode))
+        with open(question_file) as f:
+            questions = json.load(f)['questions']
+        N = len(questions)
+        strd = h5py.special_dtype(vlen=str)
+        intd = h5py.special_dtype(vlen=np.dtype('int32'))
+        with h5py.File(os.path.join(data_dir, dataset, f'qa_sets_{dataset}.h5'), 'w') as f:
+            image_id = f.create_dataset('image_ids', (N,), dtype='int32')
+            q = f.create_group("question")
+            q_raw = q.create_dataset('raw', (N,), dtype=strd)
+            q_data = q.create_dataset('data', (N,), dtype=intd)
+            a = f.create_group("answer")
+            a_raw = a.create_dataset('raw', (N,), dtype=strd)
+            a_data = a.create_dataset('data', (N,), dtype='int32')
+            qt = f.create_group("question_type")
+            qt_raw = qt.create_dataset('raw', (N,), dtype=strd)
+            qt_data = qt.create_dataset('data', (N,), dtype='int32')
+
+            q2i_dict = {"<pad>": 0}
+            a2i_dict = {"<pad>": 0}
+            qt2i_dict = dict()
+            print(f"{mode} layout")
+
+            for idx, question in enumerate(tqdm(questions)):
+                idir = question['image_filename']
+                iid = int(idir.split('.')[0].split('_')[-1])
+                image_id[idx] = iid
+
+                q_raw[idx] = question['question']
+                q_text = question['question'].lower()
+                q_text = re.sub(";", " ;", q_text)
+                q_words = re.sub("[^;A-Za-z ]+", "", q_text).split(' ')
+                for q_word in q_words:
+                    if q_word not in q2i_dict:
+                        q2i_dict[q_word] = len(q2i_dict)
+                q_data[idx] = [q2i_dict[q_word] for q_word in q_words]
+
+                a_raw[idx] = question['answer']
+                a_word = str(question['answer']).lower().strip()
+                if a_word not in a2i_dict:
+                    a2i_dict[a_word] = len(a2i_dict)
+                a_data[idx] = a2i_dict[a_word]
+
+                qt_word = question['program'][-1][query]
+                qt_raw[idx] = qt_word
+                if qt_word not in qt2i_dict:
+                    qt2i_dict[qt_word] = len(qt2i_dict)
+                qt_data[idx] = qt2i_dict[qt_word]
+            print(f"{mode} dataset")
+
+            qn = len(q2i_dict)
+            q_dict = q.create_dataset('dict', (qn,), dtype=strd)
+            for word, idx in q2i_dict.items():
+                q_dict[idx] = word
+
+            atn = len(a2i_dict)
+            a_dict = a.create_dataset('dict', (atn,), dtype=strd)
+            for word, idx in a2i_dict.items():
+                a_dict[idx] = word
+
+            qtn = len(qt2i_dict)
+            qt_dict = qt.create_dataset('dict', (qtn,), dtype=strd)
+            for word, idx in qt2i_dict.items():
+                qt_dict[idx] = word
+            print(f"{mode} finished")
+
+
+
+
+
 
 if __name__ =='__main__':
     data_directory = os.path.join(home, 'data')
-    make_text(data_dir=data_directory, dataset='vqa2', tokenizers=['none', 'rm', 'nltk', 'act', 'myact'])
+    # make_vqa_text(data_dir=data_directory, dataset='vqa2', tokenizers=['none', 'rm', 'nltk', 'act', 'myact'])
+    make_clevr_text(data_dir=data_directory, dataset='sample')
     # make_images(data_directory, 'sample', (448, 448), 5, 100)
     # make_questions(data_directory, 'sample')
     # make_images(data_directory, 'sample', (224, 224), 5, 100)
