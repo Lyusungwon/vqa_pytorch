@@ -96,7 +96,7 @@ def make_text(data_dir, dataset, tokenizers):
                             q2i_dict[tokenizer][word] = len(q2i_dict[tokenizer])
                     q_tokenizers[tokenizer]['data'][idx] = [q2i_dict[tokenizer][word] for word in preprocessed_text]
 
-                    preprocessed_word = preprocess_text(q_obj["multiple_choice_answer"], tokenizer)
+                    preprocessed_word = ' '.join(preprocess_text(q_obj["multiple_choice_answer"], tokenizer))
                     ua_words[tokenizer].append(preprocessed_word)
                     if preprocessed_word not in ua2i_dict[tokenizer]:
                         ua2i_dict[tokenizer][preprocessed_word] = len(ua2i_dict[tokenizer])
