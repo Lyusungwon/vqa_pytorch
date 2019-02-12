@@ -126,8 +126,6 @@ def preprocess_text(sentence, nlp=None):
         from nltk.tokenize import word_tokenize
         sentence = str(sentence).lower().replace(',', '').replace('?', '')
         words = word_tokenize(sentence)
-    elif nlp == 'none':
-        words = sentence.split(' ')
     elif nlp == 'mcb':
         words = tokenize_mcb(sentence)
     elif nlp == 'rm':
@@ -136,6 +134,8 @@ def preprocess_text(sentence, nlp=None):
         words = tokenize_active(sentence)
     elif nlp == 'myact':
         words = tokenize_my_active(sentence)
+    elif nlp == 'none':
+        words = sentence.split(' ')
     else:
         raise NameError(nlp)
     return words
