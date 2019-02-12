@@ -156,7 +156,7 @@ def make_clevr_text(data_dir, dataset):
         N = len(questions)
         strd = h5py.special_dtype(vlen=str)
         intd = h5py.special_dtype(vlen=np.dtype('int32'))
-        with h5py.File(os.path.join(data_dir, dataset, f'qa_sets_{dataset}.h5'), 'w') as f:
+        with h5py.File(os.path.join(data_dir, dataset, f'qa_sets_{dataset}_{mode}.h5'), 'w') as f:
             image_id = f.create_dataset('image_ids', (N,), dtype='int32')
             q = f.create_group("question")
             q_raw = q.create_dataset('raw', (N,), dtype=strd)
