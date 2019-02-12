@@ -138,7 +138,7 @@ class Recorder:
                 answer_text = list()
                 for n, i in enumerate(a):
                     if i > 0:
-                        answer_text.append("%s($.2f)" % (self.answer_idx_to_word[n], i))
+                        answer_text.append("%s(%.2f)" % (self.answer_idx_to_word[n], i))
                 answer_texts.append(', '.join(answer_text))
         else:
             answer_texts = [', '.join([self.answer_idx_to_word[i] for i in a]) for a in answer.numpy()[:n]]
