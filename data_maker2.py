@@ -78,10 +78,10 @@ def make_vqa_text(data_dir, dataset, tokenizers):
             for tokenizer in tokenizers:
                 tq = q.create_group(tokenizer)
                 q_tokenizers[tokenizer]['data'] = tq.create_dataset('data', (N,), dtype=intd)
-                ta = ua.create_group(tokenizer)
-                ua_tokenizers[tokenizer]['data'] = ta.create_dataset('data', (N,), dtype='int32')
-                ta = ma.create_group(tokenizer)
-                ma_tokenizers[tokenizer]['data'] = ta.create_dataset('data', (N, 10), dtype='int32')
+                tua = ua.create_group(tokenizer)
+                ua_tokenizers[tokenizer]['data'] = tua.create_dataset('data', (N,), dtype='int32')
+                tma = ma.create_group(tokenizer)
+                ma_tokenizers[tokenizer]['data'] = tma.create_dataset('data', (N, 10), dtype='int32')
                 q2i_dict[tokenizer] = {"<pad>": 0}
                 ua2i_dict[tokenizer] = {"<pad>": 0}
                 ma2i_dict[tokenizer] = {"<pad>": 0}
@@ -120,23 +120,23 @@ def make_vqa_text(data_dir, dataset, tokenizers):
             print(f"{mode} dataset")
 
             for tokenizer in tokenizers:
-                qn = len(q2i_dict)
+                qn = len(q2i_dict[tokenizer])
                 q_tokenizers[tokenizer]['dict'] = tq.create_dataset('dict', (qn,), dtype=strd)
                 for word, idx in q2i_dict[tokenizer].items():
                     q_tokenizers[tokenizer]['dict'][idx] = word
 
-                uan = len(ua2i_dict)
-                ua_tokenizers[tokenizer]['dict'] = tq.create_dataset('dict', (uan,), dtype=strd)
-                ua_tokenizers[tokenizer]['count'] = tq.create_dataset('count', (uan,), dtype='int32')
+                uan = len(ua2i_dict[tokenizer])
+                ua_tokenizers[tokenizer]['dict'] = tua.create_dataset('dict', (uan,), dtype=strd)
+                ua_tokenizers[tokenizer]['count'] = tua.create_dataset('count', (uan,), dtype='int32')
                 for word, idx in ua2i_dict[tokenizer].items():
                     ua_tokenizers[tokenizer]['dict'][idx] = word
-                ua_counter = Counter(ua_words)
+                ua_counter = Counter(ua_words[tokenizer])
                 for word, idx in ua2i_dict[tokenizer].items():
                     ua_tokenizers[tokenizer]['count'][idx] = ua_counter[word]
 
-                man = len(ma2i_dict)
-                ma_tokenizers[tokenizer]['dict'] = tq.create_dataset('dict', (man,), dtype=strd)
-                ma_tokenizers[tokenizer]['count'] = tq.create_dataset('count', (man,), dtype='int32')
+                man = len(ma2i_dict[tokenizer])
+                ma_tokenizers[tokenizer]['dict'] = tma.create_dataset('dict', (man,), dtype=strd)
+                ma_tokenizers[tokenizer]['count'] = tma.create_dataset('count', (man,), dtype='int32')
                 for word, idx in ma2i_dict[tokenizer].items():
                     ma_tokenizers[tokenizer]['dict'][idx] = word
                 ma_counter = Counter(ma_words)

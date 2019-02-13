@@ -73,16 +73,24 @@ class VQA(Dataset):
     def load_data(self):
         data = h5py.File(self.question_file, 'r', swmr=True)
         if self.dataset == 'vqa2':
-            self.question = data['question'][self.q_tokenizer]
-            self.answer = data['answer'][self.multi_label][self.a_tokenizer]
-            self.question_type = data['answer']
+            self.question = data['question'][self.q_tokenizer]['data']
+            self.answer = data['answer'][self.multi_label][self.a_tokenizer]['data']
+            self.question_type = data['question_type']['data']
 
+            self.i2q, self.q2i = load_dict(data['question'][self.q_tokenizer]['dict'])
+            self.i2a, self.a2i = load_dict(data['answer'][self.a_tokenizer]['dict'])
+            self.i2qt, self.qt2i = load_dict(data['question_type']['dict'])
+
+            self.a_count = 
         if self.multi_label:
             self.data_file = os.path.join(data_dir, dataset, f'data_dict_{top_k}_{multi_label}_{q_tokenizer}_{a_tokenizer}.pkl')
             print(f"Start loading {self.data_file}")
             with open(self.data_file, 'rb') as file:
                 data_dict = pickle.load(file)
                 self.a_size = len(data_dict['answer_word_to_idx'])
+
+
+
         if cv_pretrained:
             self.image_dir = os.path.join(data_dir, dataset, f'images_{self.mode}_{str(size[0])}.h5')
             if not is_file_exist(self.image_dir):
@@ -96,6 +104,15 @@ class VQA(Dataset):
                 self.image_dir = os.path.join(data_dir, dataset, 'images', f'{self.mode}')
             elif dataset == 'vqa2':
                 self.image_dir = os.path.join(data_dir, dataset, f'{self.mode}2014')
+
+    def load_dict(self, h5):
+        N = h5.shape[0]
+        i2w = dict()
+        w2i = dict()
+        for n in range(N):
+            i2w[n] = h5[n]
+            w2i[h5[n]] = n
+        return i2w, w2i
 
     def __len__(self):
         return h5py.File(self.question_file, 'r', swmr=True)['questions'].shape[0]
