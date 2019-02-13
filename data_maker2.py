@@ -139,7 +139,7 @@ def make_vqa_text(data_dir, dataset, tokenizers):
                 ma_tokenizers[tokenizer]['count'] = tma.create_dataset('count', (man,), dtype='int32')
                 for word, idx in ma2i_dict[tokenizer].items():
                     ma_tokenizers[tokenizer]['dict'][idx] = word
-                ma_counter = Counter(ma_words)
+                ma_counter = Counter(ma_words[tokenizer])
                 for word, idx in ma2i_dict[tokenizer].items():
                     ma_tokenizers[tokenizer]['count'][idx] = ma_counter[word]
             qtn = len(qt2i_dict)
@@ -227,8 +227,8 @@ def make_clevr_text(data_dir, dataset):
 
 if __name__ =='__main__':
     data_directory = os.path.join(home, 'data')
-    make_vqa_text(data_dir=data_directory, dataset='vqa2', tokenizers=['none', 'rm', 'nltk', 'act', 'myact'])
-    # make_clevr_text(data_dir=data_directory, dataset='sample')
+    # make_vqa_text(data_dir=data_directory, dataset='vqa2', tokenizers=['none', 'rm', 'nltk', 'act', 'myact'])
+    make_clevr_text(data_dir=data_directory, dataset='clevr')
     # make_images(data_directory, 'sample', (448, 448), 5, 100)
     # make_questions(data_directory, 'sample')
     # make_images(data_directory, 'sample', (224, 224), 5, 100)

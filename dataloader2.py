@@ -65,45 +65,23 @@ class VQA(Dataset):
         self.a_tokenizer = a_tokenizer
         self.text_max = text_max
 
-        self.question_file = os.path.join(data_dir, dataset, f'qa_sets_{dataset}.h5')
+        self.qa_file = os.path.join(data_dir, dataset, f'qa_sets_{self.mode}_{dataset}.h5')
         if not is_file_exist(self.question_file):
             make_questions(data_dir, dataset)
         self.load_data()
 
     def load_data(self):
-        data = h5py.File(self.question_file, 'r', swmr=True)
+        data = h5py.File(self.qa_file, 'r', swmr=True)
         if self.dataset == 'vqa2':
             self.question = data['question'][self.q_tokenizer]['data']
             self.answer = data['answer'][self.multi_label][self.a_tokenizer]['data']
             self.question_type = data['question_type']['data']
 
             self.i2q, self.q2i = load_dict(data['question'][self.q_tokenizer]['dict'])
-            self.i2a, self.a2i = load_dict(data['answer'][self.a_tokenizer]['dict'])
+            self.i2a, self.a2i = load_dict(data['answer'][self.multi_label][self.a_tokenizer]['dict'])
             self.i2qt, self.qt2i = load_dict(data['question_type']['dict'])
+            self.i2c, _ = load_dict(data['answer'][self.multi_label][self.a_tokenizer]['count'])
 
-            self.a_count = 
-        if self.multi_label:
-            self.data_file = os.path.join(data_dir, dataset, f'data_dict_{top_k}_{multi_label}_{q_tokenizer}_{a_tokenizer}.pkl')
-            print(f"Start loading {self.data_file}")
-            with open(self.data_file, 'rb') as file:
-                data_dict = pickle.load(file)
-                self.a_size = len(data_dict['answer_word_to_idx'])
-
-
-
-        if cv_pretrained:
-            self.image_dir = os.path.join(data_dir, dataset, f'images_{self.mode}_{str(size[0])}.h5')
-            if not is_file_exist(self.image_dir):
-                make_images(data_dir, dataset, size)
-            idx_dict_file = os.path.join(data_dir, dataset, 'idx_dict.pkl')
-            print(f"Start loading {idx_dict_file}")
-            with open(idx_dict_file, 'rb') as file:
-                self.idx_dict = pickle.load(file)[self.mode]
-        else:
-            if dataset == 'clevr' or dataset == 'sample':
-                self.image_dir = os.path.join(data_dir, dataset, 'images', f'{self.mode}')
-            elif dataset == 'vqa2':
-                self.image_dir = os.path.join(data_dir, dataset, f'{self.mode}2014')
 
     def load_dict(self, h5):
         N = h5.shape[0]
