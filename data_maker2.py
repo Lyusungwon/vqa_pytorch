@@ -30,7 +30,7 @@ clevr_q_dict = {'count': 'count',
 def make_questions(data_dir, dataset):
     if dataset == 'vqa2':
         make_vqa_text(data_dir, dataset, ['none', 'rm', 'nltk', 'act', 'myact'])
-    elif dataset == 'clevr':
+    elif dataset == 'clevr' or dataset == 'sample':
         make_clevr_text(data_dir, dataset)
     else:
         raise NameError(dataset)
