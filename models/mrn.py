@@ -9,7 +9,7 @@ class Mrn(nn.Module):
     def __init__(self, args):
         super().__init__()
         self.cv_pretrained = args.cv_pretrained
-        pretrained_weight = load_pretrained_embedding(args.word_to_idx, args.te_embedding) if args.te_pretrained else None
+        pretrained_weight = load_pretrained_embedding(args.idx_to_word, args.te_embedding) if args.te_pretrained else None
         self.text_encoder = TextEncoder(args.q_size, args.te_embedding, args.te_type, args.te_hidden, args.te_layer, args.te_dropout, pretrained_weight)
         if args.cv_pretrained:
             filters = 2048 if args.dataset == 'vqa2' else 1024
@@ -23,7 +23,6 @@ class Mrn(nn.Module):
         self.first_block = MrnBlock(filters, args.te_hidden, args.mrn_hidden)
         self.blocks = nn.ModuleList([MrnBlock(filters, args.mrn_hidden, args.mrn_hidden) for _ in range(args.mrn_layer - 1)])
         self.fc = nn.Linear(args.mrn_hidden, args.a_size)
-
     def forward(self, image, question, question_length):
         x = self.visual_encoder(image).squeeze(3).squeeze(2)
         _, q = self.text_encoder(question, question_length)

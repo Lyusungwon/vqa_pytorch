@@ -5,7 +5,6 @@ import datetime
 from configloader import load_default_config
 from pathlib import Path
 import dataloader
-from utils import load_dict
 from models.film import Film
 from models.basern import BaseRN
 from models.rn import RelationalNetwork
@@ -14,6 +13,7 @@ from models.san import San
 from models.mrn import Mrn
 from models.mlb import Mlb
 from models.cvpr17w import CVPR17W
+from models.mac import MACNetwork
 
 home = str(Path.home())
 
@@ -21,7 +21,7 @@ home = str(Path.home())
 def get_config():
     parser = argparse.ArgumentParser(description='parser')
     parser.add_argument('--project', type=str, default='vqa')
-    parser.add_argument('--model', type=str, choices=['basern', 'rn', 'sarn', 'san', 'mrn', 'mlb', 'c17w', 'film'])
+    parser.add_argument('--model', type=str, choices=['basern', 'rn', 'sarn', 'san', 'mrn', 'mlb', 'c17w', 'film', 'mac'])
 
     data_arg = parser.add_argument_group('Data')
     data_arg.add_argument('--data-directory', type=str, default=os.path.join(home, 'data'), help='directory of data')
@@ -30,8 +30,9 @@ def get_config():
     data_arg.add_argument('--input-w', type=int)
     data_arg.add_argument('--top-k', type=int)
     data_arg.add_argument('--multi-label', action='store_true')
-    data_arg.add_argument('--q-tokenizer', type=str, default='rm', choices=['none', 'nltk', 'rm', 'mcb', 'act', 'myact'])
-    data_arg.add_argument('--a-tokenizer', type=str, default='none', choices=['none', 'nltk', 'rm', 'mcb', 'act', 'myact'])
+    data_arg.add_argument('--q-tokenizer', type=str, choices=['none', 'nltk', 'rm', 'mcb', 'act', 'myact'])
+    data_arg.add_argument('--a-tokenizer', type=str, choices=['none', 'nltk', 'rm', 'mcb', 'act', 'myact'])
+    data_arg.add_argument('--question-inverse', action='store_true')
     data_arg.add_argument('--text-max', type=int)
 
     train_arg = parser.add_argument_group('Train')
@@ -39,11 +40,12 @@ def get_config():
     train_arg.add_argument('--epochs', type=int)
     train_arg.add_argument('--lr', type=float)
     train_arg.add_argument('--lr-reduce', action='store_true')
+    train_arg.add_argument('--lr-increase', action='store_true')
     train_arg.add_argument('--weight-decay', type=float)
     train_arg.add_argument('--gradient-clipping', type=float)
     train_arg.add_argument('--log-directory', type=str, default=os.path.join(home, 'experiment'), metavar='N', help='log directory')
     train_arg.add_argument('--device', type=int, default=0, metavar='N', help='gpu number')
-    train_arg.add_argument('--cpu-num', type=int, default=8, metavar='N', help='number of cpu')
+    train_arg.add_argument('--cpu-num', type=int, default=4, metavar='N', help='number of cpu')
     train_arg.add_argument('--multi-gpu', action='store_true')
     train_arg.add_argument('--gpu-num', type=int, default=4, metavar='N', help='number of cpu')
     train_arg.add_argument('--seed', type=int, default=1, metavar='S', help='random seed (default: 1)')
@@ -56,17 +58,20 @@ def get_config():
     # Convolution
     model_arg.add_argument('--cv-pretrained', action='store_true')
     model_arg.add_argument('--cv-filter', type=int)
-    model_arg.add_argument('--cv-kernel', type=int)
-    model_arg.add_argument('--cv-stride', type=int)
-    model_arg.add_argument('--cv-layer', type=int)
+    model_arg.add_argument('--cv-kernel', type=int, default=3)
+    model_arg.add_argument('--cv-stride', type=int, default=2)
+    model_arg.add_argument('--cv-layer', type=int, default=5)
     model_arg.add_argument('--cv-batchnorm', action='store_true')
     # Text Encoder
     model_arg.add_argument('--te-pretrained', action='store_true')
     model_arg.add_argument('--te-type', type=str, choices=['gru', 'lstm'])
     model_arg.add_argument('--te-embedding', type=int)
     model_arg.add_argument('--te-hidden', type=int)
-    model_arg.add_argument('--te-layer', type=int)
-    model_arg.add_argument('--te-dropout', type=float)
+    model_arg.add_argument('--te-layer', type=int, default=1)
+    model_arg.add_argument('--te-dropout', type=float, default=0)
+    model_arg.add_argument('--te-bidir', action='store_true')
+    # Text Encoder
+    model_arg.add_argument('--cf-pretrained', action='store_true')
     # film
     model_arg.add_argument('--film-res-kernel', type=int)
     model_arg.add_argument('--film-res-layer', type=int)
@@ -105,6 +110,12 @@ def get_config():
     # c17w
     model_arg.add_argument('--c17w-hidden', type=int)
     model_arg.add_argument('--c17w-dropout', type=float)
+    # c17w
+    model_arg.add_argument('--mac-step', type=int)
+    model_arg.add_argument('--mac-hidden', type=int)
+    model_arg.add_argument('--mac-sa', action='store_true')
+    model_arg.add_argument('--mac-mg', action='store_true')
+    model_arg.add_argument('--mac-dropout', type=int)
 
     args, unparsed = parser.parse_known_args()
     args = load_default_config(args)
@@ -116,17 +127,26 @@ def get_config():
         args.device = torch.device(args.device)
 
     args.data_config = [args.input_h, args.input_w, args.cpu_num, args.cv_pretrained, args.top_k,
-                        args.multi_label, args.q_tokenizer, args.a_tokenizer, args.text_max]
+                        args.multi_label, args.q_tokenizer, args.a_tokenizer, args.question_inverse, args.text_max]
 
-    config_list = [args.project, args.model, args.dataset, args.epochs, args.batch_size, args.lr,
-                   args.weight_decay, args.gradient_clipping,
-                   args.device, args.multi_gpu, args.gpu_num] + args.data_config + \
-        ['cv', args.cv_filter, args.cv_kernel, args.cv_stride, args.cv_layer, args.cv_batchnorm,
-         'te', args.te_pretrained, args.te_type, args.te_embedding, args.te_hidden, args.te_layer, args.te_dropout]
+    config_list = [args.project, args.model, args.dataset, args.epochs, args.batch_size, args.lr, args.device] \
+                  + args.data_config + \
+                  ['cv', args.cv_filter, args.cv_batchnorm,
+                   'te', args.te_pretrained, args.te_type, args.te_embedding, args.te_hidden, args.te_bidir,
+                   'cf', args.cf_pretrained]
 
     train_loader = dataloader.load_dataloader(args.data_directory, args.dataset, True, args.batch_size, args.data_config)
     test_loader = dataloader.load_dataloader(args.data_directory, args.dataset, False, args.batch_size, args.data_config)
-    args = load_dict(args)
+    args.i2q = train_loader.dataset.i2q
+    args.i2a = train_loader.dataset.i2a
+    args.i2qt = train_loader.dataset.i2qt
+    args.q_size = len(train_loader.dataset.i2q)
+    args.a_size = len(train_loader.dataset.i2a)
+    args.qt_size = len(train_loader.dataset.i2qt)
+    # if args.top_k:
+    #     args.top_k_words = [word for n, word in enumerate(args.idx_to_answer_word) if n in train_loader.dataset.top_k_words]
+
+
 
     if args.model == 'film':
         config_list = config_list + \
@@ -164,8 +184,13 @@ def get_config():
         model = Mlb(args)
     elif args.model == 'c17w':
         config_list = config_list + \
-                      ['c17w', args.c17w_hidden, args.memo]
+            ['c17w', args.c17w_hidden, args.memo]
         model = CVPR17W(args)
+    elif args.model == 'mac':
+        config_list = config_list + \
+            ['mac', args.mac_step, args.mac_hidden, args.mac_sa, args.mac_mg, args.mac_dropout, args.memo]
+        model = MACNetwork(args)
+
     else:
         print("Not an available model.")
 

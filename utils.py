@@ -1,8 +1,9 @@
 import os
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 import time
-import pickle
+import h5py
 from text_preprocessor import tokenize_rm
 
 
@@ -23,18 +24,6 @@ def is_file_exist(file):
     else:
         print(f"Data {file} does not exist")
         return False
-
-
-def positional_encode(images):
-    try:
-        device = images.get_device()
-    except:
-        device = torch.device('cpu')
-    n, c, h, w = images.size()
-    x_coordinate = torch.linspace(-1, 1, w).view(1, 1, 1, w).expand(n, 1, h, w).to(device)
-    y_coordinate = torch.linspace(-1, 1, h).view(1, 1, h, 1).expand(n, 1, h, w).to(device)
-    images = torch.cat([images, x_coordinate, y_coordinate], 1)
-    return images
 
 
 def save_checkpoint(epoch_idx, model, optimizer, args, batch_record_idx):
@@ -67,18 +56,21 @@ def load_checkpoint(model, optimizer, log, device):
     return model, optimizer, epoch_idx + 1, batch_record_idx + 1
 
 
-def load_pretrained_embedding(word2idx, embedding_dim):
+def load_pretrained_embedding(idx2word, embedding_dim):
     import torchtext
     pretrained = torchtext.vocab.GloVe(name='6B', dim=embedding_dim)
-    embedding = torch.Tensor(len(word2idx), embedding_dim)
+    embedding = torch.Tensor(len(idx2word), embedding_dim)
     missing = 0
-    for word, idx in word2idx.items():
-        word = tokenize_rm(word)[0]
-        embedding[idx, :] = pretrained[word].data
-        if sum(embedding[idx, :]) == 0:
-            missing += 1
-            print(word)
-    print(f"Loaded pretrained embedding({(len(word2idx) - missing)/len(word2idx)}).")
+    for idx, word in enumerate(idx2word):
+        if word != '<pad>':
+            words = tokenize_rm(word)
+            if words:
+                word = words[0]
+                embedding[idx, :] = pretrained[word].data
+                if sum(embedding[idx, :]) == 0:
+                    missing += 1
+    embedding = F.normalize(embedding, -1)
+    print(f"Loaded pretrained embedding({(len(idx2word) - missing)/len(idx2word)}).")
     return embedding
 
 
@@ -94,25 +86,27 @@ def load_pretrained_conv():
 
 
 def load_dict(args):
-    dict_file = os.path.join(args.data_directory, args.dataset, f'data_dict_{args.top_k}_{args.multi_label}_{args.q_tokenizer}_{args.a_tokenizer}.pkl')
-    with open(dict_file, 'rb') as file:
-        data_dict = pickle.load(file)
-    args.word_to_idx = data_dict['word_to_idx']
-    args.idx_to_word = data_dict['idx_to_word']
-    args.answer_word_to_idx = data_dict['answer_word_to_idx']
-    args.answer_idx_to_word = data_dict['answer_idx_to_word']
-    args.question_type_to_idx = data_dict['question_type_to_idx']
-    args.idx_to_question_type = data_dict['idx_to_question_type']
-    args.q_size = len(args.word_to_idx)
-    args.a_size = len(args.answer_word_to_idx)
-    args.qt_size = len(args.question_type_to_idx)
+    with h5py.File(os.path.join(args.data_directory, args.dataset, f'qa_sets_{args.dataset}_train.h5'), 'r', swmr=True) as f:
+        if args.dataset == 'vqa2':
+            # args.word_to_idx = data_dict['word_to_idx']
+            args.idx_to_word = f['question'][args.q_tokenizer]['dict'][:]
+            # args.answer_word_to_idx = data_dict['answer_word_to_idx']
+            args.idx_to_answer_word = f['answer']['uni-label' if not args.multi_label else 'multi-label'][args.a_tokenizer]['dict'][:]
+            # args.question_type_to_idx = data_dict['question_type_to_idx']
+            args.idx_to_question_type = f['question_type']['dict'][:]
+        else:
+            args.idx_to_word = f['question']['dict'][:]
+            args.idx_to_answer_word = f['answer']['dict'][:]
+            args.idx_to_question_type = f['question_type']['dict'][:]
     return args
 
 
-def to_onehot(a, a_size):
+def to_onehot(a, a_size, mask):
     onehot = torch.zeros(len(a), a_size)
     divide = 3.0 if len(a) > 1 else 1.0
     onehot[[i for i in range(len(a))], a] = 1.0
+    if mask is not None:
+        onehot = onehot[:, mask]
     onehot = torch.min(onehot.sum(0) / divide, torch.ones(1)).unsqueeze(0)
     # onehot = onehot.sum(0).unsqueeze(0) / float(len(a))
     return onehot

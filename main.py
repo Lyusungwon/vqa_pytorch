@@ -10,9 +10,19 @@ args, model, train_loader, test_loader = get_config()
 device = args.device
 torch.manual_seed(args.seed)
 
-optimizer = optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
+optimizer = optim.Adam(model.parameters(),
+                       lr=args.lr,
+                       weight_decay=args.weight_decay)
 if args.lr_reduce:
-    reduce_scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min')
+    reduce_scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer,
+                                                            mode='min',
+                                                            factor=0.5,
+                                                            threshold=1e-6 if args.multi_label else 1e-4)
+elif args.lr_increase:
+    scheduler = optim.lr_scheduler.StepLR(optimizer,
+                                          step_size=20,
+                                          gamma=2)
+
 
 start_epoch = 0
 batch_record_idx = 0
@@ -49,10 +59,12 @@ def epoch(epoch_idx, is_train):
     if not is_train:
         if args.lr_reduce:
             reduce_scheduler.step(recorder.get_epoch_loss())
-        recorder.log_text(question.cpu(), answer.cpu(), types.cpu())
+        elif args.lr_increase:
+            if scheduler.get_lr()[0] < 5e-4:
+                scheduler.step()
+        recorder.log_text(question.cpu(), output.cpu(), answer.cpu(), types.cpu())
         if not args.cv_pretrained:
             recorder.log_image(image.cpu())
-
 
 if __name__ == '__main__':
     writer = SummaryWriter(args.log)
