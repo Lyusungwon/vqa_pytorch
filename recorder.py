@@ -14,13 +14,13 @@ class Recorder:
         self.writer = writer
         self.args = args
         self.timestamp = args.timestamp
-        self.idx_to_question_type = args.idx_to_question_type
-        self.idx_to_word = args.idx_to_word
-        self.answer_idx_to_word = args.answer_idx_to_word
+        self.i2qt = args.i2qt
+        self.i2q = args.i2q
+        self.i2a = args.i2a
         self.qt_size = args.qt_size
         self.multi_label = args.multi_label
         self.batch_record_idx = batch_record_idx
-        self.csv_file = os.path.join(args.log_directory, args.project, f"{args.project}_log.csv")
+        self.csv_file = os.path.join('.', 'log', f"{args.project}_log.csv")
         self.rolling_average = 5
         self.logs = defaultdict(lambda: deque(maxlen=self.rolling_average))
         self.epoch_idx = None
@@ -40,13 +40,12 @@ class Recorder:
         self.batch_end_time = 0
         self.batch_time = 0
         self.per_question_log = dict()
-        self.exclude = ['data_directory', 'log_directory', 'data_config', 'config', 'log', 'word_to_idx', 'idx_to_word',
-                       'answer_word_to_idx', 'answer_idx_to_word', 'question_type_to_idx', 'idx_to_question_type', 'q_size', 'a_size', 'qt_size']
-        self.header = self.make_header()
-        if not is_file_exist(self.csv_file):
-            self.make_csv()
-        if not self.is_record_exist():
-            self.make_record()
+        self.exclude = ['data_directory', 'log_directory', 'data_config', 'config', 'log', 'i2q', 'i2a', 'i2qt']
+        # self.header = self.make_header()
+        # if not is_file_exist(self.csv_file):
+        #     self.make_csv()
+        # if not self.is_record_exist():
+        #     self.make_record()
 
     def epoch_start(self, epoch_idx, is_train, loader):
         self.epoch_idx = epoch_idx
@@ -67,7 +66,7 @@ class Recorder:
     def batch_end(self, loss, output, answer, types):
         if self.multi_label:
             maxi = torch.max(output, 1)[1]
-            pred = torch.zeros_like(output.detach())
+            pred = torch.zeros_like(output)
             pred[torch.arange(output.size()[0]), maxi] = 1.0
             correct = (pred * answer).sum(1)
         else:
@@ -101,9 +100,7 @@ class Recorder:
         self.writer.add_scalar('{}-6.Batch time'.format(self.mode), self.batch_time, self.batch_record_idx)
         self.batch_record_idx += 1
 
-    def log_epoch(self, idx_to_question_type=None):
-        if idx_to_question_type:
-            self.idx_to_question_type = idx_to_question_type
+    def log_epoch(self):
         self.epoch_end_time = time.time()
         self.epoch_time = self.epoch_end_time - self.epoch_start_time
         print('====> {}: {} Average loss: {:.4f} / Time: {:.4f} / Accuracy: {:.4f}'.format(
@@ -116,37 +113,39 @@ class Recorder:
         self.writer.add_scalar(f'{self.mode}-2.Total accuracy', self.epoch_correct / self.dataset_size, self.epoch_idx)
         self.writer.add_scalar(f'{self.mode}-3.Total time', self.epoch_time, self.epoch_idx)
         self.logs[f"{self.mode}"].append(self.epoch_correct / self.dataset_size)
-        for question_type_idx, question_type_name in self.idx_to_question_type.items():
+        for question_type_idx, question_type_name in enumerate(self.i2qt):
             self.per_question_type['correct'][question_type_name] += self.per_question['correct'][question_type_idx]
             self.per_question_type['number'][question_type_name] += self.per_question['number'][question_type_idx]
         for question_type_name in self.per_question_type['correct'].keys():
             type_accuracy = self.per_question_type['correct'][question_type_name] / self.per_question_type['number'][question_type_name]
             self.per_question_log[question_type_name] = type_accuracy
             self.writer.add_scalar("{}-7. Question '{}' accuracy".format(self.mode, question_type_name), type_accuracy, self.epoch_idx)
-        self.update_csv(self.csv_file)
+        # self.update_csv(self.csv_file)
 
     def log_image(self, image):
         n = min(image.size()[0], 8)
         self.writer.add_image('Image', make_grid(image[:n], 4), self.epoch_idx)
 
-    def log_text(self, question, answer, types):
+    def log_text(self, question, output, answer, types):
         n = min(question.size()[0], 8)
-        question_texts = [' '.join([self.idx_to_word[i] for i in q]) for q in question.numpy()[:n]]
+        question_texts = [' '.join([self.i2q[i] for i in q]) for q in question.numpy()[:n]]
+        pred = torch.max(output, 1)[1]
+        predict_texts = [self.i2a[a] for a in pred.numpy()[:n]]
         if self.multi_label:
             answer_texts = list()
             for a in answer.numpy()[:n]:
                 answer_text = list()
                 for n, i in enumerate(a):
                     if i > 0:
-                        answer_text.append("%s(%.2f)" % (self.answer_idx_to_word[n], i))
+                        answer_text.append("%s(%.2f)" % (self.i2a[n], i))
                 answer_texts.append(', '.join(answer_text))
         else:
-            answer_texts = [', '.join([self.answer_idx_to_word[i] for i in a]) for a in answer.numpy()[:n]]
-        question_type_texts = [self.idx_to_question_type[qt] for qt in types.cpu().numpy()[:n]]
+            answer_texts = [self.i2a[a] for a in answer.numpy()[:n]]
+        question_type_texts = [self.i2qt[qt] for qt in types.cpu().numpy()[:n]]
         qa_text = list()
-        for j, (question, answer, q_type) in enumerate(zip(question_texts, answer_texts, question_type_texts)):
-            qa_text.append(f'Quesetion: {question} / Answer: {answer} / Type: {q_type}')
-        self.writer.add_text(f'QA', ' \n '.join(qa_text), self.epoch_idx)
+        for j, (question, answer, pred, q_type) in enumerate(zip(question_texts, answer_texts, predict_texts, question_type_texts)):
+            qa_text.append(f'Quesetion: {question} / Predicted: {pred}  / Answer: {answer} / Type: {q_type}')
+        self.writer.add_text(f'QA', ' | '.join(qa_text), self.epoch_idx)
 
     def get_epoch_loss(self):
         return self.epoch_loss / self.dataset_size
@@ -162,7 +161,7 @@ class Recorder:
                 for val in values:
                     record_dict[f"{mode}_{kind}_TotalAcc({val})"] = 0
                 record_dict[f"{mode}_{kind}_TotalLoss"] = 0
-                for _, question_type in self.idx_to_question_type.items():
+                for _, question_type in enumerate(self.i2qt):
                     record_dict[f"{mode}_{kind}_QT_{question_type}"] = 0
         record_dict["Finished"] = False
         for key in self.exclude:
