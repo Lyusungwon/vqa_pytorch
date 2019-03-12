@@ -1,7 +1,6 @@
 import os
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 import time
 import h5py
 from text_preprocessor import tokenize_rm
@@ -53,7 +52,7 @@ def load_checkpoint(model, optimizer, log, device):
     epoch_idx = checkpoint['epoch']
     batch_record_idx = checkpoint['batch_idx']
     print('Model loaded from {}.'.format(load_file))
-    return model, optimizer, epoch_idx + 1, batch_record_idx + 1
+    return model, optimizer, epoch_idx, batch_record_idx
 
 
 def load_pretrained_embedding(idx2word, embedding_dim):
@@ -61,7 +60,7 @@ def load_pretrained_embedding(idx2word, embedding_dim):
     pretrained = torchtext.vocab.GloVe(name='6B', dim=embedding_dim)
     embedding = torch.Tensor(len(idx2word), embedding_dim)
     missing = 0
-    for idx, word in enumerate(idx2word):
+    for idx, word in idx2word.items():
         if word != '<pad>':
             words = tokenize_rm(word)
             if words:
@@ -69,9 +68,18 @@ def load_pretrained_embedding(idx2word, embedding_dim):
                 embedding[idx, :] = pretrained[word].data
                 if sum(embedding[idx, :]) == 0:
                     missing += 1
-    embedding = F.normalize(embedding, -1)
+    # embedding = F.normalize(embedding, -1)
     print(f"Loaded pretrained embedding({(len(idx2word) - missing)/len(idx2word)}).")
     return embedding
+
+def load_bert(num_labels):
+    from pytorch_pretrained_bert.file_utils import PYTORCH_PRETRAINED_BERT_CACHE
+    from pytorch_pretrained_bert.modeling import BertForSequenceClassification
+    model = BertForSequenceClassification.from_pretrained('bert-base-uncased',
+              cache_dir=PYTORCH_PRETRAINED_BERT_CACHE,
+              num_labels=num_labels)
+    print("Loaded pretrained Bert.")
+    return model
 
 
 def load_pretrained_conv():

@@ -16,6 +16,7 @@ class Recorder:
         self.timestamp = args.timestamp
         self.i2qt = args.i2qt
         self.i2q = args.i2q
+        self.embedding_label = [word for word in self.i2q.values()]
         self.i2a = args.i2a
         self.qt_size = args.qt_size
         self.multi_label = args.multi_label
@@ -29,8 +30,7 @@ class Recorder:
         self.dataset_size = 0
         self.epoch_loss = 0
         self.epoch_correct = 0
-        self.per_question = None
-        self.per_question_type = None
+        self.per_type = None
         self.epoch_start_time = 0
         self.epoch_end_time = 0
         self.epoch_time = 0
@@ -54,12 +54,9 @@ class Recorder:
         self.dataset_size = len(loader.dataset)
         self.epoch_loss = 0
         self.epoch_correct = 0
-        self.per_question = {"correct": defaultdict(lambda: 0),
-                             "number": defaultdict(lambda: 0)
-                             }
-        self.per_question_type = {"correct": defaultdict(lambda: 0),
-                                  "number": defaultdict(lambda: 0)
-                                  }
+        self.per_type = {"correct": defaultdict(lambda: 0),
+                         "number": defaultdict(lambda: 0)
+                         }
         self.epoch_start_time = time.time()
         self.batch_start_time = time.time()
 
@@ -82,10 +79,10 @@ class Recorder:
         self.batch_start_time = time.time()
 
     def record_types(self, correct, types):
-        for i in range(self.qt_size):
+        for i, type in self.i2qt.items():
             idx = (types == i).float()
-            self.per_question["correct"][i] += (correct * idx).sum().item()
-            self.per_question["number"][i] += idx.sum().item()
+            self.per_type["correct"][type] += (correct * idx).sum().item()
+            self.per_type["number"][type] += idx.sum().item()
 
     def log_batch(self, batch_idx, batch_size):
         print('Train Batch: {} [{}/{}({:.0f}%)] Loss:{:.4f} / Time:{:.4f} / Acc:{:.4f}'.format(
@@ -113,14 +110,19 @@ class Recorder:
         self.writer.add_scalar(f'{self.mode}-2.Total accuracy', self.epoch_correct / self.dataset_size, self.epoch_idx)
         self.writer.add_scalar(f'{self.mode}-3.Total time', self.epoch_time, self.epoch_idx)
         self.logs[f"{self.mode}"].append(self.epoch_correct / self.dataset_size)
-        for question_type_idx, question_type_name in enumerate(self.i2qt):
-            self.per_question_type['correct'][question_type_name] += self.per_question['correct'][question_type_idx]
-            self.per_question_type['number'][question_type_name] += self.per_question['number'][question_type_idx]
-        for question_type_name in self.per_question_type['correct'].keys():
-            type_accuracy = self.per_question_type['correct'][question_type_name] / self.per_question_type['number'][question_type_name]
+        # for question_type_idx, question_type_name in self.i2qt.items():
+        #     print(question_type_idx, question_type_name)
+        #     self.per_question_type['correct'][question_type_name] += self.per_question['correct'][question_type_idx]
+        #     self.per_question_type['number'][question_type_name] += self.per_question['number'][question_type_idx]
+        # for question_type_name in self.per_question_type['correct'].keys():
+        for question_type_idx, question_type_name in self.i2qt.items():
+            type_accuracy = self.per_type['correct'][question_type_name] / self.per_type['number'][question_type_name]
             self.per_question_log[question_type_name] = type_accuracy
-            self.writer.add_scalar("{}-7. Question '{}' accuracy".format(self.mode, question_type_name), type_accuracy, self.epoch_idx)
+            self.writer.add_scalar(f"{self.mode}-7. Question {question_type_name} accuracy", type_accuracy, self.epoch_idx)
         # self.update_csv(self.csv_file)
+
+    def log_lr(self, lr):
+        self.writer.add_scalar(f"{self.mode}-8. Learning rate", lr, self.epoch_idx)
 
     def log_image(self, image):
         n = min(image.size()[0], 8)
@@ -147,6 +149,9 @@ class Recorder:
             qa_text.append(f'Quesetion: {question} / Predicted: {pred}  / Answer: {answer} / Type: {q_type}')
         self.writer.add_text(f'QA', ' | '.join(qa_text), self.epoch_idx)
 
+    def log_embedding(self, features):
+        self.writer.add_embedding(features, metadata=self.embedding_label, global_step=self.epoch_idx)
+
     def get_epoch_loss(self):
         return self.epoch_loss / self.dataset_size
 
@@ -161,7 +166,7 @@ class Recorder:
                 for val in values:
                     record_dict[f"{mode}_{kind}_TotalAcc({val})"] = 0
                 record_dict[f"{mode}_{kind}_TotalLoss"] = 0
-                for _, question_type in enumerate(self.i2qt):
+                for _, question_type in self.i2qt.items():
                     record_dict[f"{mode}_{kind}_QT_{question_type}"] = 0
         record_dict["Finished"] = False
         for key in self.exclude:

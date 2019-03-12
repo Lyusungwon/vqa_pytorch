@@ -9,8 +9,16 @@ class RelationalNetwork(nn.Module, Default):
     def __init__(self, args):
         super(RelationalNetwork, self).__init__()
         self.init_encoders(args)
-        self.g_theta = MLP((args.cv_filter + 2) * 2 + args.te_hidden, args.rn_gt_hidden, args.rn_gt_hidden, args.rn_gt_layer)
-        self.f_phi = MLP(args.rn_gt_hidden, args.rn_fp_hidden, args.a_size, args.rn_fp_layer, args.rn_fp_dropout)
+        self.g_theta = MLP((args.cv_filter + 2) * 2 + args.te_hidden,
+                           args.rn_gt_hidden,
+                           args.rn_gt_hidden,
+                           args.rn_gt_layer)
+        self.f_phi = MLP(args.rn_gt_hidden,
+                         args.rn_fp_hidden,
+                         args.a_size,
+                         args.rn_fp_layer,
+                         args.rn_fp_dropout,
+                         last=True)
         if args.cv_pretrained:
             self.visual_encoder = nn.Sequential(
                                     nn.Conv2d(1024, args.cv_filter, 3, 2, padding=1),
@@ -21,12 +29,8 @@ class RelationalNetwork(nn.Module, Default):
                                     # nn.ReLU()
             )
             self.init()
-        else:
-            self.visual_encoder = Conv(args.cv_filter, args.cv_kernel, args.cv_stride, args.cv_layer, args.cv_batchnorm)
 
     def forward(self, image, question, question_length):
-        if not self.cv_pretrained:
-            image = image * 2 - 1
         x = self.visual_encoder(image)
         _, code = self.text_encoder(question, question_length)
         pairs = rn_encode(x, code)
@@ -49,8 +53,8 @@ def rn_encode(images, questions):
     n, c, h, w = images.size()
     o = h * w
     hd = questions.size(1)
-    x_coordinate = torch.linspace(-1, 1, h).view(1, h, 1, 1).expand(n, h, w, 1).contiguous().view(n, o, 1).to(device)
-    y_coordinate = torch.linspace(-1, 1, w).view(1, 1, w, 1).expand(n, h, w, 1).contiguous().view(n, o, 1).to(device)
+    x_coordinate = torch.linspace(-h/2, h/2, h).view(1, h, 1, 1).expand(n, h, w, 1).contiguous().view(n, o, 1).to(device)
+    y_coordinate = torch.linspace(-w/2, w/2, w).view(1, 1, w, 1).expand(n, h, w, 1).contiguous().view(n, o, 1).to(device)
     images = images.view(n, c, o).transpose(1, 2)
     images = torch.cat([images, x_coordinate, y_coordinate], 2)
     images1 = images.unsqueeze(1).expand(n, o, o, c + 2).contiguous()

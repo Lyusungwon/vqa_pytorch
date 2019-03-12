@@ -1,30 +1,23 @@
-import torch
-from layers import *
-from utils import *
+import torch.nn as nn
+from models.default import Default
 
 
-class San(nn.Module):
+class San(nn.Module, Default):
     def __init__(self, args):
         super().__init__()
-        self.cv_pretrained = args.cv_pretrained
-        pretrained_weight = load_pretrained_embedding(args.idx_to_word, args.te_embedding) if args.te_pretrained else None
-        self.text_encoder = TextEncoder(args.q_size, args.te_embedding, args.te_type, args.te_hidden, args.te_layer, args.te_dropout, pretrained_weight)
-        if args.cv_pretrained:
-            filters = 2048 if args.dataset == 'vqa2' else 1024
-        else:
-            self.visual_encoder = Conv(args.cv_filter, args.cv_kernel, args.cv_stride, args.cv_layer, args.cv_batchnorm)
-            filters = args.cv_filter
-        self.visual_resize = nn.Conv2d(filters, args.te_hidden, 1, 1, 1)
-        self.blocks = nn.ModuleList([SanBlock(args.te_hidden, args.san_k) for _ in range(args.san_layer)])
-        self.fc = nn.Linear(args.te_hidden, args.a_size)
+        self.init_encoders(args)
+        self.cv_fc = nn.Linear(args.cv_filter, args.san_k)
+        self.te_fc = nn.Linear(args.te_hidden, args.san_k)
+        self.blocks = nn.ModuleList([SanBlock(args.san_k, args.san_k) for _ in range(args.san_layer)])
+        self.fc = nn.Linear(args.san_k, args.a_size)
 
     def forward(self, image, question, question_length):
-        if not self.cv_pretrained:
-            image = self.visual_encoder(image)
-        x = self.visual_resize(image)
+        x = self.visual_encoder(image)
         b, c, h, w = x.size()
-        x = x.view(b, c, -1)
+        x = x.view(b, c, -1).transpose(2, 1)
         _, u = self.text_encoder(question, question_length)
+        x = self.cv_fc(x).transpose(2, 1)
+        u = self.te_fc(u)
         for block in self.blocks:
             u = block(x, u)
         logits = self.fc(u)

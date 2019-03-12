@@ -39,8 +39,11 @@ def get_config():
     train_arg.add_argument('--batch-size', type=int)
     train_arg.add_argument('--epochs', type=int)
     train_arg.add_argument('--lr', type=float)
-    train_arg.add_argument('--lr-reduce', action='store_true')
-    train_arg.add_argument('--lr-increase', action='store_true')
+    train_arg.add_argument('--lr-bert', type=float)
+    # train_arg.add_argument('--lr-reduce', action='store_true')
+    # train_arg.add_argument('--lr-min', type=float, default=5e-8)
+    # train_arg.add_argument('--lr-increase', action='store_true')
+    # train_arg.add_argument('--lr-max', type=float, default=5e-4)
     train_arg.add_argument('--weight-decay', type=float)
     train_arg.add_argument('--gradient-clipping', type=float)
     train_arg.add_argument('--log-directory', type=str, default=os.path.join(home, 'experiment'), metavar='N', help='log directory')
@@ -70,6 +73,7 @@ def get_config():
     model_arg.add_argument('--te-layer', type=int, default=1)
     model_arg.add_argument('--te-dropout', type=float, default=0)
     model_arg.add_argument('--te-bidir', action='store_true')
+    model_arg.add_argument('--te-bert', action='store_true')
     # Text Encoder
     model_arg.add_argument('--cf-pretrained', action='store_true')
     # film
@@ -127,9 +131,9 @@ def get_config():
         args.device = torch.device(args.device)
 
     args.data_config = [args.input_h, args.input_w, args.cpu_num, args.cv_pretrained, args.top_k,
-                        args.multi_label, args.q_tokenizer, args.a_tokenizer, args.question_inverse, args.text_max]
+                        args.multi_label, args.q_tokenizer, args.a_tokenizer, args.question_inverse, args.text_max, args.te_bert]
 
-    config_list = [args.project, args.model, args.dataset, args.epochs, args.batch_size, args.lr, args.device] \
+    config_list = [args.project, args.model, args.dataset, args.epochs, args.batch_size, args.lr, args.lr_bert, args.device] \
                   + args.data_config + \
                   ['cv', args.cv_filter, args.cv_batchnorm,
                    'te', args.te_pretrained, args.te_type, args.te_embedding, args.te_hidden, args.te_bidir,

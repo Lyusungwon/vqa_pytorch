@@ -1,21 +1,14 @@
 import torch
-from layers import *
-from utils import *
+import torch.nn as nn
+from models.default import Default
 
 
-class Mlb(nn.Module):
+class Mlb(nn.Module, Default):
     def __init__(self, args):
         super().__init__()
-        self.cv_pretrained = args.cv_pretrained
-        pretrained_weight = load_pretrained_embedding(args.idx_to_word, args.te_embedding) if args.te_pretrained else None
-        self.text_encoder = TextEncoder(args.q_size, args.te_embedding, args.te_type, args.te_hidden, args.te_layer, args.te_dropout, pretrained_weight)
-        if args.cv_pretrained:
-            filters = 2048 if args.dataset == 'vqa2' else 1024
-        else:
-            self.visual_encoder = Conv(args.cv_filter, args.cv_kernel, args.cv_stride, args.cv_layer, args.cv_batchnorm)
-            filters = args.cv_filter
+        self.init_encoders(args)
         q = args.te_hidden
-        i = filters
+        i = args.cv_filter
         h = args.mlb_hidden
         g = args.mlb_glimpse
         o = args.a_size
@@ -42,10 +35,7 @@ class Mlb(nn.Module):
         self.P2 = nn.Linear(h, o)
 
     def forward(self, image, question, question_length):
-        if self.cv_pretrained:
-            i = image
-        else:
-            i = self.visual_encoder(image)
+        i = self.visual_encoder(image)
         b, c, h, w = i.size()
         i = i.view(b, c, -1).transpose(1, 2) # b o c
         _, q = self.text_encoder(question, question_length) # b q

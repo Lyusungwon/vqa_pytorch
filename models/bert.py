@@ -1,13 +1,41 @@
+import os
 import torch
 import torch.nn as nn
 from layers import MLP
 from models.default import Default
 from torch.nn.init import kaiming_uniform_
+from pytorch_pretrained_bert.file_utils import PYTORCH_PRETRAINED_BERT_CACHE
+from pytorch_pretrained_bert.modeling import BertForQuestionAnswering, BertConfig, WEIGHTS_NAME, CONFIG_NAME
+from pytorch_pretrained_bert.optimization import BertAdam, warmup_linear
+from pytorch_pretrained_bert.tokenization import (BasicTokenizer,
+                                                  BertTokenizer,
+                                                  whitespace_tokenize)
+import json
 
 
-class Film(nn.Module, Default):
+tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+mode = 'val'
+question_file = os.path.join('/home/sungwon/data', 'clevr', 'questions', f'CLEVR_{mode}_questions.json')
+with open(question_file) as f:
+    questions = json.load(f)['questions']
+sample = questions[0]['question']
+print(sample)
+tokenized_sample = tokenizer.tokenize(sample)
+tokenized_sample.insert(0, '[CLS]')
+tokenized_sample.append('[SEP]')
+print(tokenized_sample)
+print(len(tokenized_sample))
+ids = tokenizer.convert_tokens_to_ids(tokenized_sample)
+print(ids)
+print(len(ids))
+
+segment_token = [0]*len(tokenized_sample)
+breakpoint()
+
+
+class Bert(nn.Module, Default):
     def __init__(self, args):
-        super(Film, self).__init__()
+        super(Bert, self).__init__()
         self.init_encoders(args)
         self.filters = args.cv_filter
         self.layers = args.film_res_layer

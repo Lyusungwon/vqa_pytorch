@@ -22,11 +22,15 @@ class TextEncoder(nn.Module):
             self.seq = nn.LSTM(embedding, hidden, num_layers=num_layer, dropout=dropout, bidirectional=bidirectional,  batch_first=True)
         # self.gru.flatten_parameters()
         self.init(pretrained_weight)
+        print(self.embedding)
+        print(self.seq)
 
     def forward(self, question, question_length):
         b_size = question.size()[0]
         embedded = self.embedding(question)
         packed_embedded = pack_padded_sequence(embedded, question_length, batch_first=True)
+
+        self.seq.flatten_parameters()
         if self.type == 'gru':
             output, h_n = self.seq(packed_embedded)
         elif self.type == 'lstm':
@@ -54,7 +58,7 @@ class Conv(nn.Module):
         self.batchnorm = batchnorm
         prev_filter = 3
         net = nn.ModuleList([])
-        for _ in range(layer):
+        for _ in range(layer - 1):
             net.append(nn.Conv2d(prev_filter, filter, kernel, stride, (kernel - 1)//2, bias=not batchnorm))
             if batchnorm:
                 net.append(nn.BatchNorm2d(filter))
@@ -62,6 +66,7 @@ class Conv(nn.Module):
             prev_filter = filter
         self.net = nn.Sequential(*net)
         self.init()
+        print(self.net)
 
     def forward(self, x):
         x = self.net(x)
@@ -81,9 +86,10 @@ class MLP(nn.Module):
                  hidden,
                  output,
                  layer,
-                 dropout=None):
+                 dropout=None,
+                 last=False):
         super(MLP, self).__init__()
-        layers = [input] + [hidden for _ in range(layer)] + [output]
+        layers = [input] + [hidden for _ in range(layer - 1)] + [output]
         net = []
         for n, (inp, outp) in enumerate(zip(layers, layers[1:])):
             net.append(nn.Linear(inp, outp))
@@ -91,9 +97,12 @@ class MLP(nn.Module):
             if dropout and n == layer - 2:
                 # net.insert(-3, nn.Dropout(dropout))
                 net.append(nn.Dropout(dropout))
-        net = nn.ModuleList(net[:-1])
+        if last:
+            net = net[:-1]
+        net = nn.ModuleList(net)
         self.net = nn.Sequential(*net)
         self.init()
+        print(self.net)
 
     def forward(self, x):
         x = self.net(x)
