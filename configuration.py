@@ -50,7 +50,7 @@ def get_config():
     train_arg.add_argument('--device', type=int, default=0, metavar='N', help='gpu number')
     train_arg.add_argument('--cpu-num', type=int, default=4, metavar='N', help='number of cpu')
     train_arg.add_argument('--multi-gpu', action='store_true')
-    train_arg.add_argument('--gpu-num', type=int, default=4, metavar='N', help='number of cpu')
+    train_arg.add_argument('--gpu-num', type=list, nargs='+', default=[0,1,2,3], metavar='N', help='number of gpu')
     train_arg.add_argument('--seed', type=int, default=1, metavar='S', help='random seed (default: 1)')
     train_arg.add_argument('--log-interval', type=int, default=10, metavar='N', help='how many batches to wait before logging training status')
     train_arg.add_argument('--timestamp', type=str, default=datetime.datetime.now().strftime("%y%m%d%H%M%S"), metavar='N', help='time of the run(no modify)')

@@ -79,8 +79,6 @@ def epoch(epoch_idx, is_train):
         recorder.batch_end(loss.item(), output.cpu().detach(), answer.cpu(), types.cpu())
         if is_train and (batch_idx % args.log_interval == 0):
             recorder.log_batch(batch_idx, batch_size)
-        print(torch.cuda.memory_allocated(device))
-        breakpoint()
     recorder.log_epoch()
     if not is_train:
         recorder.log_text(question.cpu(), output.cpu(), answer.cpu(), types.cpu())
@@ -102,7 +100,7 @@ if __name__ == '__main__':
         # elif args.lr_increase:
         #     if optimizer.param_groups[0]['lr'] < args.lr_max:
         #         scheduler.step()
-        if epoch_idx % 20 == 0:
-            recorder.log_embedding(module.text_encoder.embedding.weight.data)
+        # if epoch_idx % 20 == 0:
+        #     recorder.log_embedding(module.text_encoder.embedding.weight.data)
     recorder.finish()
     writer.close()
