@@ -15,9 +15,9 @@ class CVPR17W(nn.Module):
         else:
             self.visual_encoder = Conv(args.cv_filter, args.cv_kernel, args.cv_stride, args.cv_layer, args.cv_batchnorm)
             filters = args.cv_filter
-        self.fa = Gated_Tanh(args.te_hidden + filters, args.te_hidden)
-        self.wa = nn.Linear(args.te_hidden, 1)
-        self.fq = Gated_Tanh(args.te_hidden, args.c17w_hidden)
+        self.fa = Gated_Tanh(args.te_hidden * 2 + filters, args.te_hidden * 2)
+        self.wa = nn.Linear(args.te_hidden * 2, 1)
+        self.fq = Gated_Tanh(args.te_hidden * 2, args.c17w_hidden)
         self.fv = Gated_Tanh(filters, args.c17w_hidden)
         if args.cf_pretrained:
             self.fo = Gated_Tanh(args.c17w_hidden, args.te_embedding)
