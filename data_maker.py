@@ -500,12 +500,12 @@ def make_raw_images(data_dir, dataset, size, batch_size=128, max_images=None):
         # print('idx_dict.pkl saved')
 
 
-def make_images(data_dir, dataset, size, batch_size=128, max_images=None):
+def make_images(data_dir, dataset, size, object_size, batch_size=128, max_images=None):
     print(f"Start making {dataset} image h5py")
     modes = ['train', 'val']
     model_name = 'resnet152' if dataset == 'vqa2' else 'resnet101'
     image_type = 'jpg' if dataset == 'vqa2' else 'png'
-    model = build_model(model_name, size[0])
+    model = build_model(model_name, size[0], object_size)
     img_size = size
     idx_dict = dict()
     for mode in modes:
@@ -528,7 +528,7 @@ def make_images(data_dir, dataset, size, batch_size=128, max_images=None):
         print(input_paths[0])
         print(input_paths[-1])
         strd = h5py.special_dtype(vlen=str)
-        with h5py.File(os.path.join(data_dir, dataset, f'images_{mode}_{str(size[0])}.h5'), 'w') as f:
+        with h5py.File(os.path.join(data_dir, dataset, f'images_{mode}_{str(size[0])}_{object_size}.h5'), 'w') as f:
             N = len(input_paths)
             img_idx = f.create_dataset('idx', (1,), dtype=strd)
             img_idx[0] = str(idx_dict)
@@ -557,26 +557,36 @@ def make_images(data_dir, dataset, size, batch_size=128, max_images=None):
                 i1 = i0 + len(cur_batch)
                 feat_dset[i0:i1] = feats
                 print('Processed %d / %d images' % (i1, len(input_paths)))
-        print(f"images saved in {os.path.join(data_dir, dataset, f'image_{mode}_{str(size[0])}.h5')}")
+        print(f"images saved in {os.path.join(data_dir, dataset, f'image_{mode}_{str(size[0])}_{object_size}.h5')}")
         # with open(os.path.join(data_dir, dataset, 'idx_dict.pkl'), 'wb') as file:
         #     pickle.dump(idx_dict, file, protocol=pickle.HIGHEST_PROTOCOL)
         # print('idx_dict.pkl saved')
 
 
-def build_model(model, size):
+def build_model(model, size, object_size):
     import torchvision.models
     if not hasattr(torchvision.models, model):
         raise ValueError('Invalid model "%s"' % model)
     if not 'resnet' in model:
         raise ValueError('Feature extraction only supports ResNets')
     cnn = getattr(torchvision.models, model)(pretrained=True)
-    if size == 224:
-        layers = list(cnn.children())[:-2]
-    elif size == 448:
-        layers = list(cnn.children())[:-2]
-        layers.append(torch.nn.AvgPool2d(2, 2, 0))
+    if object_size == 7:
+        if size == 224:
+            layers = list(cnn.children())[:-2]
+        elif size == 448:
+            layers = list(cnn.children())[:-2]
+            layers.append(torch.nn.AvgPool2d(2, 2, 0))
+        else:
+            raise AssertionError("Invalid size")
+    elif object_size == 14:
+        if size == 224:
+            layers = list(cnn.children())[:-3]
+        elif size == 448:
+            layers = list(cnn.children())[:-2]
+        else:
+            raise AssertionError("Invalid size")
     else:
-        raise AssertionError("Invalid size")
+        raise AssertionError("Invalid object size")
     model = torch.nn.Sequential(*layers)
     model.cuda()
     model.eval()
@@ -608,12 +618,12 @@ if __name__ =='__main__':
     data_directory = os.path.join(home, 'data')
     # make_vqa_text(data_dir=data_directory, dataset='vqa2', tokenizers=['none', 'rm', 'nltk', 'act', 'myact'])
     # make_clevr_text(data_dir=data_directory, dataset='clevr')
-    make_bert(data_dir=data_directory, dataset='clevr')
+    # make_bert(data_dir=data_directory, dataset='clevr')
     # make_clevr_text(data_dir=data_directory, dataset='sample')
     # make_images(data_directory, 'vqa2', (448, 448), 128)
     # make_raw_images(data_directory, 'clevr', (128, 128), 128)
     # make_clevr_humans_text(data_directory, 'clevr-humans')
     # make_questions(data_directory, 'sample')
-    # make_images(data_directory, 'sample', (224, 224), 5, 100)
+    make_images(data_directory, 'clevr', (224, 224), 14, 128)
 
 

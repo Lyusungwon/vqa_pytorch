@@ -1,12 +1,12 @@
 from layers import *
-from utils import load_pretrained_embedding, load_bert
 from torch.nn.init import kaiming_uniform
+from utils import load_pretrained_embedding, load_bert
 import torch
+
 
 class Default:
     # def __init__(self, args):
     def init_encoders(self, args):
-        self.cv_pretrained = args.cv_pretrained
         if not args.te_bert:
             pretrained_weight = load_pretrained_embedding(args.i2q, args.te_embedding) if args.te_pretrained else None
             self.text_encoder = TextEncoder(args.q_size,
@@ -21,9 +21,13 @@ class Default:
                 args.te_hidden = args.te_hidden * 2
         else:
             self.text_encoder = BertEncoder(args.te_hidden)
+        self.init_ve(args)
+
+    def init_ve(self, args):
+        self.cv_pretrained = args.cv_pretrained
         if args.cv_pretrained:
-            filters = 2048 if args.dataset == 'vqa2' else 1024
-            self.visual_encoder = nn.Conv2d(filters, args.cv_filter, 3, 1)
+            filters = 2048 if args.object_size == 7 else 1024
+            self.visual_encoder = nn.Conv2d(filters, args.cv_filter, 3, 1, 1)
             kaiming_uniform(self.visual_encoder.weight)
             self.visual_encoder.bias.data.zero_()
         else:
@@ -45,5 +49,5 @@ class BertEncoder(nn.Module):
         except:
             device = torch.device('cpu')
         segment_ids = torch.zeros_like(question).to(device)
-        out = self.text_encoder(question, segment_ids)
-        return None, out
+        encoded_layers, out = self.text_encoder(question, segment_ids)
+        return encoded_layers[-1], out

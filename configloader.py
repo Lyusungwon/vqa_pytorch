@@ -5,6 +5,7 @@ def load_default_config(args):
             "dataset": "clevr",
             "input_h": 224,
             "input_w": 224,
+            "object_size": 14,
             "top_k": 0,
             "batch_size": 64,
             "epochs": 200,
@@ -220,6 +221,45 @@ def load_default_config(args):
             "mac_sa": False,
             "mac_mg": False,
             "mac_dropout": 0.15,
+        }
+    elif args.model == 'ban':
+        arg_dict = {
+            "dataset": "vqa2",
+            "input_h": 448,
+            "input_w": 448,
+            "top_k": 0,
+            "batch_size": 256,
+            "epochs": 20,
+            "lr": 7e-4,
+            "weight_decay": 0,
+            "cv_filter": 512,
+            "te_type": 'lstm',
+            "te_embedding": 300,
+            "te_hidden": 512,
+            "ban_hidden": 1280,
+            "ban_glimpse": 8
+        }
+    elif args.model == 'tf':
+        arg_dict = {
+            "dataset": "clevr",
+            "input_h": 224,
+            "input_w": 224,
+            "object_size": 7,
+            "top_k": 0,
+            "batch_size": 64,
+            "epochs": 100,
+            "lr": 1e-4,
+            "weight_decay": 1e-5,
+            "cv_filter": 256,
+            "te_type": 'lstm',
+            "te_embedding": 256,
+            "te_hidden": 256,
+            "tf_layer": 3,
+            "tf_d_inner": 1024,
+            "tf_n_head": 4,
+            "tf_d_k": 32,
+            "tf_d_v": 32,
+            "tf_dropout": 0.1
         }
     else:
         raise NameError()

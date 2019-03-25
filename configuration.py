@@ -14,6 +14,8 @@ from models.mrn import Mrn
 from models.mlb import Mlb
 from models.cvpr17w import CVPR17W
 from models.mac import MACNetwork
+from models.ban import BanModel
+from models.transformer import Transformer
 
 home = str(Path.home())
 
@@ -21,13 +23,14 @@ home = str(Path.home())
 def get_config():
     parser = argparse.ArgumentParser(description='parser')
     parser.add_argument('--project', type=str, default='vqa')
-    parser.add_argument('--model', type=str, choices=['basern', 'rn', 'sarn', 'san', 'mrn', 'mlb', 'c17w', 'film', 'mac'])
+    parser.add_argument('--model', type=str, choices=['basern', 'rn', 'sarn', 'san', 'mrn', 'mlb', 'c17w', 'film', 'mac', 'ban', 'tf'])
 
     data_arg = parser.add_argument_group('Data')
     data_arg.add_argument('--data-directory', type=str, default=os.path.join(home, 'data'), help='directory of data')
     data_arg.add_argument('--dataset', type=str)
     data_arg.add_argument('--input-h', type=int)
     data_arg.add_argument('--input-w', type=int)
+    data_arg.add_argument('--object-size', type=int)
     data_arg.add_argument('--top-k', type=int)
     data_arg.add_argument('--multi-label', action='store_true')
     data_arg.add_argument('--q-tokenizer', type=str, choices=['none', 'nltk', 'rm', 'mcb', 'act', 'myact'])
@@ -50,7 +53,7 @@ def get_config():
     train_arg.add_argument('--device', type=int, default=0, metavar='N', help='gpu number')
     train_arg.add_argument('--cpu-num', type=int, default=4, metavar='N', help='number of cpu')
     train_arg.add_argument('--multi-gpu', action='store_true')
-    train_arg.add_argument('--gpu-num', type=list, nargs='+', default=[0,1,2,3], metavar='N', help='number of gpu')
+    train_arg.add_argument('--gpu-num', nargs='+', type=int, default=[0,1,2,3], metavar='N', help='number of gpu')
     train_arg.add_argument('--seed', type=int, default=1, metavar='S', help='random seed (default: 1)')
     train_arg.add_argument('--log-interval', type=int, default=10, metavar='N', help='how many batches to wait before logging training status')
     train_arg.add_argument('--timestamp', type=str, default=datetime.datetime.now().strftime("%y%m%d%H%M%S"), metavar='N', help='time of the run(no modify)')
@@ -108,18 +111,29 @@ def get_config():
     # mrn
     model_arg.add_argument('--mrn-hidden', type=int)
     model_arg.add_argument('--mrn-layer', type=int)
-    # mln
+    # mlb
     model_arg.add_argument('--mlb-hidden', type=int)
     model_arg.add_argument('--mlb-glimpse', type=int)
     # c17w
     model_arg.add_argument('--c17w-hidden', type=int)
     model_arg.add_argument('--c17w-dropout', type=float)
-    # c17w
+    # mac
     model_arg.add_argument('--mac-step', type=int)
     model_arg.add_argument('--mac-hidden', type=int)
     model_arg.add_argument('--mac-sa', action='store_true')
     model_arg.add_argument('--mac-mg', action='store_true')
     model_arg.add_argument('--mac-dropout', type=int)
+    # ban
+    model_arg.add_argument('--ban-hidden', type=int)
+    model_arg.add_argument('--ban-glimpse', type=int)
+    # transformer
+    model_arg.add_argument('--tf-try', type=int, default=0)
+    model_arg.add_argument('--tf-layer', type=int)
+    model_arg.add_argument('--tf-d-inner', type=int)
+    model_arg.add_argument('--tf-n-head', type=int)
+    model_arg.add_argument('--tf-d-k', type=int)
+    model_arg.add_argument('--tf-d-v', type=int)
+    model_arg.add_argument('--tf-dropout', type=int)
 
     args, unparsed = parser.parse_known_args()
     args = load_default_config(args)
@@ -130,7 +144,7 @@ def get_config():
         torch.cuda.set_device(args.device)
         args.device = torch.device(args.device)
 
-    args.data_config = [args.input_h, args.input_w, args.cpu_num, args.cv_pretrained, args.top_k,
+    args.data_config = [args.input_h, args.input_w, args.object_size, args.cpu_num, args.cv_pretrained, args.top_k,
                         args.multi_label, args.q_tokenizer, args.a_tokenizer, args.question_inverse, args.text_max, args.te_bert]
 
     config_list = [args.project, args.model, args.dataset, args.epochs, args.batch_size, args.lr, args.lr_bert, args.device] \
@@ -194,7 +208,14 @@ def get_config():
         config_list = config_list + \
             ['mac', args.mac_step, args.mac_hidden, args.mac_sa, args.mac_mg, args.mac_dropout, args.memo]
         model = MACNetwork(args)
-
+    elif args.model == 'ban':
+        config_list = config_list + \
+            ['ban', args.ban_hidden, args.ban_glimpse, args.memo]
+        model = BanModel(args)
+    elif args.model == 'tf':
+        config_list = config_list + \
+                      ['tf', args.tf_layer, args.tf_d_inner, args.tf_n_head, args.tf_d_k, args.tf_d_v, args.tf_dropout, args.memo]
+        model = Transformer(args)
     else:
         print("Not an available model.")
 
@@ -209,7 +230,5 @@ def get_config():
         args.log = os.path.join(args.log_directory, args.project, load_folder)
     else:
         args.log = os.path.join(args.log_directory, args.project, args.timestamp + args.config)
-
     print(f"Config: {args.config}")
-
     return args, model, train_loader, test_loader

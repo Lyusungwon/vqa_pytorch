@@ -34,11 +34,11 @@ def collate_text(list_inputs):
 
 
 def load_dataloader(data_directory, dataset, is_train, batch_size=128, data_config=[224, 224, 0, True, 0, False, 'rm', False, 0]):
-    input_h, input_w, cpu_num, cv_pretrained, top_k, multi_label, q_tokenizer, a_tokenizer, question_inverse, text_max, te_bert = data_config
+    input_h, input_w, object_size, cpu_num, cv_pretrained, top_k, multi_label, q_tokenizer, a_tokenizer, question_inverse, text_max, te_bert = data_config
     transform = None
     dataloader = DataLoader(
         VQA(data_directory, dataset, train=is_train, transform=transform,
-            size=(input_h, input_w), cv_pretrained=cv_pretrained, top_k=top_k,
+            size=(input_h, input_w), object_size = object_size, cv_pretrained=cv_pretrained, top_k=top_k,
             multi_label=multi_label, q_tokenizer=q_tokenizer, a_tokenizer=a_tokenizer,
             question_inverse=question_inverse, text_max=text_max, te_bert=te_bert),
         batch_size=batch_size, shuffle=True,
@@ -50,7 +50,7 @@ def load_dataloader(data_directory, dataset, is_train, batch_size=128, data_conf
 class VQA(Dataset):
     """VQA dataset."""
     def __init__(self, data_dir, dataset, train=True, transform=None,
-                 size=(224, 224), cv_pretrained=True, top_k=0,
+                 size=(224, 224), object_size=14, cv_pretrained=True, top_k=0,
                  multi_label=False, q_tokenizer='none', a_tokenizer='none',
                  question_inverse=False, text_max=14, te_bert=False):
         self.dataset = dataset
@@ -73,7 +73,7 @@ class VQA(Dataset):
             if not is_file_exist(self.qa_file):
                 make_bert(data_dir, dataset)
         if cv_pretrained:
-            self.image_dir = os.path.join(data_dir, dataset, f'images_{self.mode}_{str(size[0])}.h5')
+            self.image_dir = os.path.join(data_dir, dataset, f'images_{self.mode}_{str(size[0])}_{object_size}.h5')
             if not is_file_exist(self.image_dir):
                 make_images(data_dir, dataset, size)
             # self.idx_dict_file = os.path.join(data_dir, dataset, 'idx_dict.pkl')

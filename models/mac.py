@@ -26,7 +26,8 @@ class MACNetwork(nn.Module, Default):
         # self.embed = nn.Embedding(n_vocab, embed_hidden)
         # self.lstm = nn.LSTM(embed_hidden, dim,
         #                 batch_first=True, bidirectional=True)
-        self.lstm_proj = nn.Linear(args.te_hidden * 2, dim)
+        self.lstm_proj = nn.Linear(args.te_hidden, dim)
+        self.q_proj = nn.Linear(args.te_hidden, 2 * dim)
 
         self.mac = MACUnit(dim, max_step,
                         self_attention, memory_gate, dropout)
@@ -47,6 +48,8 @@ class MACNetwork(nn.Module, Default):
         self.visual_encoder[0].bias.data.zero_()
         kaiming_uniform_(self.visual_encoder[2].weight)
         self.visual_encoder[2].bias.data.zero_()
+        kaiming_uniform_(self.lstm_proj.weight)
+        kaiming_uniform_(self.q_proj.weight)
 
         kaiming_uniform_(self.classifier[0].weight)
 
@@ -66,6 +69,7 @@ class MACNetwork(nn.Module, Default):
         # lstm_out, _ = nn.utils.rnn.pad_packed_sequence(lstm_out,
         #                                             batch_first=True)
         lstm_out = self.lstm_proj(lstm_out)
+        h = self.q_proj(h)
         # print(h.size())
         # h = h.permute(1, 0, 2).contiguous().view(b_size, -1)
         # print(h.size())

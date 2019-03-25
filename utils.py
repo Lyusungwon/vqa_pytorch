@@ -72,12 +72,14 @@ def load_pretrained_embedding(idx2word, embedding_dim):
     print(f"Loaded pretrained embedding({(len(idx2word) - missing)/len(idx2word)}).")
     return embedding
 
-def load_bert(num_labels):
+def load_bert(num_labels=None):
     from pytorch_pretrained_bert.file_utils import PYTORCH_PRETRAINED_BERT_CACHE
-    from pytorch_pretrained_bert.modeling import BertForSequenceClassification
-    model = BertForSequenceClassification.from_pretrained('bert-base-uncased',
-              cache_dir=PYTORCH_PRETRAINED_BERT_CACHE,
-              num_labels=num_labels)
+    from pytorch_pretrained_bert.modeling import BertModel
+    model = BertModel.from_pretrained('bert-base-uncased')
+    # from pytorch_pretrained_bert.modeling import BertForSequenceClassification
+    # model = BertForSequenceClassification.from_pretrained('bert-base-uncased',
+    #           cache_dir=PYTORCH_PRETRAINED_BERT_CACHE,
+    #           num_labels=num_labels)
     print("Loaded pretrained Bert.")
     return model
 
