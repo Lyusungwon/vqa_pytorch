@@ -135,7 +135,7 @@ def preprocess_text(sentence, nlp=None):
     elif nlp == 'myact':
         words = tokenize_my_active(sentence)
     elif nlp == 'none':
-        words = sentence.split(' ').lower()
+        words = list(map(lower, sentence.split(' ')))
     else:
         raise NameError(nlp)
     return words
